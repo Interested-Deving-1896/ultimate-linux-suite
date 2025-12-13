@@ -5,66 +5,110 @@ All notable changes to Ultimate Linux Suite will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2024-12-11
+## [1.0.0] - 2024-12-14
 
 ### Added
-- Initial release of Ultimate Linux Suite
-- **OS Detection** - Automatic distribution detection with support for:
-  - Arch Linux, Manjaro, EndeavourOS, Garuda
-  - Debian, Ubuntu, Linux Mint, Pop!_OS, elementary OS, Zorin OS
-  - Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux
-  - openSUSE Leap, openSUSE Tumbleweed, SLES
-  - Kali Linux
-  - Parrot OS
-  - Generic fallback for unknown distros
-- **Hardware Detection** - CPU, GPU, RAM, and disk detection
-- **Applications Module** - Install software by category or preset profile:
-  - Categories: Essentials, Development, Multimedia, Gaming, Security, Office, Browsers, Utilities
-  - Presets: Workstation, Gaming, Developer, Pentest, Server, Minimal
-- **Drivers Module** - GPU and WiFi driver management:
-  - NVIDIA driver detection and installation
-  - AMD mesa/vulkan driver support
-  - Intel graphics driver support
-  - Broadcom WiFi driver support
-  - Realtek WiFi driver guidance
-  - DKMS installation and rebuild
-- **Optimization Module** - System performance tuning:
-  - Quick profiles: Desktop, Gaming, Laptop, Server
-  - Manual tuning: Swappiness, VFS cache, I/O scheduler, CPU governor
-  - Persistent sysctl configuration
-- **Recovery Module** - System repair tools:
-  - Fix broken packages
-  - Clean package cache
-  - Rebuild initramfs
-  - Update GRUB bootloader
-  - Network reset
-  - Disk health check (SMART)
-  - Filesystem check scheduling
-  - Journal error viewer
-  - Package list backup
-- **Profile Setup** - Guided system setup wizard
-- **Distro Backends** - Per-distribution package name mappings and special handling
-- **File Logging** - Session logging to /var/log/ultimate-linux-suite/ or ~/.ultimate-linux-suite/logs/
-- **Helper Functions** - Comprehensive utility library with uls_ prefixed functions
+
+#### Core Features
+- **Queue System** - All operations are staged for review before execution
+  - Package installations queued with descriptions
+  - System commands queued with previews
+  - Execute all, clear, or remove individual items
+- **OS Detection** - Comprehensive system identification
+  - Distribution and version detection
+  - Package manager detection (apt, dnf, pacman, zypper)
+  - Init system detection (systemd, openrc, sysvinit, runit)
+  - Desktop environment detection (GNOME, KDE, XFCE, etc.)
+  - Session type detection (Wayland, X11, TTY)
+- **Hardware Detection** - Complete hardware profiling
+  - CPU vendor, model, cores, and feature flags
+  - GPU vendor and model (NVIDIA, AMD, Intel)
+  - WiFi chipset detection (Intel, Broadcom, Realtek, Atheros)
+  - Battery status for laptops
+  - Form factor detection (desktop, laptop, VM)
+
+#### Application Installer
+- 60+ applications with cross-distro package mapping
+- Categories: Browsers, Development, Gaming, Media, Communication, Productivity, Utilities, Security
+- Preset profiles: Workstation, Gaming, Developer, Pentest, Server, Minimal
+- Flatpak integration with Flathub search
+- Package format: `APP|CATEGORY|DESC|APT|DNF|PACMAN|ZYPPER|FLATPAK|CHECK_CMD`
+
+#### System Optimization
+- **Memory**: Swappiness, VFS cache pressure, ZRAM, Transparent Huge Pages
+- **I/O**: Scheduler selection (mq-deadline, bfq, kyber, none)
+- **Network**: BBR congestion control, TCP buffer tuning, IPv6 toggle, DNS caching
+- **Power**: CPU governor, laptop mode
+- **Desktop**: Compositor tweaks, animation settings
+- Quick profiles: Desktop, Gaming, Laptop, Server
+
+#### Driver Management
+- NVIDIA proprietary driver installation
+- AMD mesa/Vulkan drivers
+- Intel media drivers
+- Broadcom WiFi (broadcom-sta, b43)
+- Realtek WiFi guidance
+- VirtualBox Guest Additions
+- VMware Tools (open-vm-tools)
+- QEMU Guest Agent
+- DKMS support and module rebuild
+
+#### Recovery Tools
+- Fix broken packages (dpkg --configure, apt -f install, etc.)
+- Clean package cache
+- Remove orphan packages
+- Clear temporary files (/tmp, /var/tmp, ~/.cache)
+- Rebuild initramfs
+- Update GRUB bootloader
+- Reset network (NetworkManager, systemd-networkd)
+- Reset DNS (Cloudflare, Google, Quad9, DHCP restore)
+- Check disk health (SMART)
+- Schedule filesystem check
+- View journal errors
+- Backup installed package list
+
+#### Distribution Packages
+- `.deb` for Debian, Ubuntu, Linux Mint, Kali, Parrot OS
+- `.rpm` for Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux
+- `.rpm` for openSUSE Leap/Tumbleweed
+- `.pkg.tar.zst` for Arch Linux (+ AUR -git version)
+- Makefile with install/uninstall/test targets
+- Build scripts for all formats
+
+### Supported Distributions
+- **Debian Family**: Debian, Ubuntu, Linux Mint, Pop!_OS, elementary OS, Zorin OS
+- **Fedora Family**: Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux
+- **Arch Family**: Arch Linux, Manjaro, EndeavourOS, Garuda, Artix
+- **openSUSE Family**: openSUSE Leap, openSUSE Tumbleweed, SLES
+- **Security**: Kali Linux, Parrot OS
+- **Generic**: Fallback for unknown distributions
 
 ### Technical Details
 - Pure Bash implementation (requires Bash 4.0+)
-- No external dependencies for core functionality
-- Modular architecture with separate lib/, modules/, menus/, backends/ directories
-- Safe error handling without aggressive `set -e`
-- Non-interactive mode for CI testing (--non-interactive flag)
+- Modular architecture: lib/, modules/, menus/, backends/, apps/
+- Source guards prevent multiple inclusion
+- Safe error handling (no aggressive `set -e`)
+- File logging to /var/log/ultimate-linux-suite/ or ~/.ultimate-linux-suite/logs/
+- Non-interactive mode for CI/testing
 
-### Notes
-- This is a clone-and-run toolkit - no build steps required
-- Packaging (.deb/.rpm) is NOT required for normal usage
-- Run with `sudo ./suite.sh` for full functionality
+### Usage
+```bash
+# Clone and run
+git clone https://github.com/Nerds489/ultimate-linux-suite.git
+cd ultimate-linux-suite
+sudo ./ultimate.sh
+
+# Or install system-wide
+sudo make install
+ultimate-linux-suite
+```
 
 ## [Unreleased]
 
 ### Planned
-- Flatpak/Snap integration
 - System backup and restore
-- Network configuration module
-- Firewall management
+- Firewall management (ufw, firewalld)
 - Service management module
 - Theme and appearance settings
+- Snap integration
+- AUR helper installation (yay/paru)
