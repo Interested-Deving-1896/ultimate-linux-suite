@@ -1,10 +1,13 @@
 # Ultimate Linux Suite
 
+[![Release](https://img.shields.io/github/v/release/Nerds489/ultimate-linux-suite)](https://github.com/Nerds489/ultimate-linux-suite/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/Bash-4.0%2B-green.svg)](https://www.gnu.org/software/bash/)
 [![Platform](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://kernel.org)
 
 A comprehensive, multi-distribution Linux system management toolkit. One script to rule them all.
+
+**[Download Latest Release](https://github.com/Nerds489/ultimate-linux-suite/releases/latest)**
 
 ## Quick Start
 
@@ -46,14 +49,16 @@ ultimate-linux-suite  # Run from anywhere
 
 ### Option 3: Package Install
 
+Download from [Releases](https://github.com/Nerds489/ultimate-linux-suite/releases/latest):
+
 | Distribution | Package | Install Command |
 |--------------|---------|-----------------|
-| Debian/Ubuntu/Mint | `.deb` | `sudo dpkg -i ultimate-linux-suite_1.0.0-1_all.deb` |
-| Fedora/RHEL/CentOS | `.rpm` | `sudo dnf install ultimate-linux-suite-1.0.0-1.noarch.rpm` |
-| Arch Linux | `.pkg.tar.zst` | `sudo pacman -U ultimate-linux-suite-1.0.0-1-any.pkg.tar.zst` |
-| openSUSE | `.rpm` | `sudo zypper install ultimate-linux-suite-1.0.0-0.noarch.rpm` |
+| Debian/Ubuntu/Mint/Kali/Parrot | `.deb` | `sudo dpkg -i ultimate-linux-suite_1.0.0-1_all.deb` |
+| Fedora/RHEL/CentOS | `.tar.gz` | Extract and run `sudo make install` |
+| Arch Linux | `.tar.gz` | Extract, `cd packaging/arch && makepkg -si` |
+| openSUSE | `.tar.gz` | Extract and run `sudo make install` |
 
-Build packages yourself:
+Build packages from source:
 ```bash
 make deb        # Debian/Ubuntu/Mint/Kali/Parrot
 make rpm        # Fedora/RHEL/CentOS
