@@ -2,16 +2,50 @@
 
 A comprehensive Linux system optimization and management toolkit.
 
-## LOCAL USAGE
+## Quick Start
 
 ```bash
 git clone https://github.com/Nerds489/ultimate-linux-suite.git
 cd ultimate-linux-suite
-chmod +x suite.sh
-sudo ./suite.sh
+chmod +x ultimate.sh
+sudo ./ultimate.sh
 ```
 
 **That's it.** Clone and run - no build steps, no packages required.
+
+## Installation Options
+
+### Option 1: Direct (Recommended)
+```bash
+git clone https://github.com/Nerds489/ultimate-linux-suite.git
+cd ultimate-linux-suite
+sudo make install
+ultimate-linux-suite  # Run from anywhere
+```
+
+### Option 2: Package Install
+
+| Distribution | Install Command |
+|--------------|-----------------|
+| **Debian/Ubuntu/Mint/Kali/Parrot** | `sudo dpkg -i ultimate-linux-suite_1.0.0-1_all.deb` |
+| **Fedora/RHEL/CentOS** | `sudo dnf install ultimate-linux-suite-1.0.0-1.noarch.rpm` |
+| **Arch Linux** | `sudo pacman -U ultimate-linux-suite-1.0.0-1-any.pkg.tar.zst` |
+| **openSUSE** | `sudo zypper install ultimate-linux-suite-1.0.0-0.noarch.rpm` |
+
+### Building Packages
+
+```bash
+# Build for current distro
+make deb      # Debian/Ubuntu/Mint/Kali/Parrot
+make rpm      # Fedora/RHEL/CentOS
+make arch     # Arch Linux
+make opensuse # openSUSE
+
+# Build all formats
+make all-pkgs
+
+# Packages output to dist/
+```
 
 ## Features
 
@@ -51,19 +85,19 @@ Unknown distributions fall back to "generic" mode with basic functionality.
 
 ```bash
 # Launch interactive menu
-sudo ./suite.sh
+sudo ./ultimate.sh
 
 # Show help
-./suite.sh --help
+./ultimate.sh --help
 
 # Show version
-./suite.sh --version
+./ultimate.sh --version
 
 # Enable debug output
-sudo ./suite.sh --debug
+sudo ./ultimate.sh --debug
 
 # Non-interactive mode (for CI testing)
-./suite.sh --non-interactive
+./ultimate.sh --non-interactive
 ```
 
 ## Application Presets
@@ -90,7 +124,7 @@ sudo ./suite.sh --debug
 
 ```
 ultimate-linux-suite/
-├── suite.sh              # Main entry point
+├── ultimate.sh           # Main entry point
 ├── LICENSE               # MIT License
 ├── README.md             # This file
 ├── CHANGELOG.md          # Version history
@@ -139,8 +173,15 @@ ultimate-linux-suite/
 │   ├── broadcom/
 │   ├── realtek-r8152/
 │   └── realtek-r8821cu/
-└── scripts/              # Development scripts
-    └── dev-check.sh      # Syntax/lint checker
+├── packaging/            # Distribution packages
+│   ├── debian/           # .deb packaging
+│   ├── rpm/              # Fedora .rpm spec
+│   ├── opensuse/         # openSUSE .rpm spec
+│   ├── arch/             # Arch PKGBUILD
+│   └── scripts/          # Build scripts
+├── scripts/              # Development scripts
+│   └── dev-check.sh      # Syntax/lint checker
+└── Makefile              # Build & install targets
 ```
 
 ## Important Notes
@@ -156,7 +197,16 @@ Just clone and run.
 
 ### Packaging (Optional)
 
-If you want to create distribution packages, that's a separate optional process not covered by this toolkit. The main `suite.sh` script will **never** invoke dpkg-buildpackage, rpmbuild, or any packaging tools.
+Distribution packages are provided for convenience. Build with:
+```bash
+make deb        # Debian/Ubuntu/Mint/Kali/Parrot
+make rpm        # Fedora/RHEL/CentOS
+make arch       # Arch Linux
+make opensuse   # openSUSE
+make all-pkgs   # All formats
+```
+
+The main `ultimate.sh` script will **never** invoke packaging tools during normal operation.
 
 ### Error Handling
 
@@ -190,14 +240,14 @@ This runs:
 1. Create `modules/mymodule.sh` with:
    - A `mymodule_init()` function
    - A `mymodule_main()` function
-2. Source it in `suite.sh`
+2. Source it in `ultimate.sh`
 3. Add menu entry in `menus/main_menu.sh`
 
 ### Adding a New Backend
 
 1. Create `backends/distroname.sh`
 2. Define `backend_pkg_name()` for package mappings
-3. Add detection in `_load_backend()` in `suite.sh`
+3. Add detection in `_load_backend()` in `ultimate.sh`
 
 ## Contributing
 

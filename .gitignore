@@ -28,3 +28,10 @@ Thumbs.db
 # Runtime files
 .suite-cache/
 .suite-backups/
+
+# Build artifacts
+build/
+dist/
+*.deb
+*.rpm
+*.pkg.tar.*

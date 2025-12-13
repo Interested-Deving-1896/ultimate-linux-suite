@@ -1,0 +1,13 @@
+ultimate-linux-suite (1.0.0-1) unstable; urgency=medium
+
+  * Initial release
+  * Multi-distro support (Debian, Ubuntu, Fedora, Arch, openSUSE, Kali, Mint, Parrot)
+  * Queue-based operation system
+  * 60+ apps with cross-distro package mapping
+  * System optimization (ZRAM, THP, BBR, swappiness)
+  * Driver management (NVIDIA, AMD, Intel, Broadcom WiFi, VM guests)
+  * Recovery tools (DNS reset, orphan cleanup, package repair)
+  * Hardware detection (CPU, GPU, WiFi chipset, battery)
+  * OS detection (init system, desktop environment, session type)
+
+ -- Nerds489 <nerds489@github.com>  Sat, 14 Dec 2024 00:00:00 +0000

@@ -1,0 +1,37 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	# Create directories
+	install -d $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite
+	install -d $(CURDIR)/debian/ultimate-linux-suite/usr/bin
+	install -d $(CURDIR)/debian/ultimate-linux-suite/usr/share/doc/ultimate-linux-suite
+	install -d $(CURDIR)/debian/ultimate-linux-suite/usr/share/man/man1
+
+	# Copy main script and make executable
+	install -m 755 ultimate.sh $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+
+	# Copy all directories
+	cp -r lib $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+	cp -r modules $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+	cp -r menus $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+	cp -r backends $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+	cp -r apps $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+	cp -r configs $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+	cp -r drivers $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+
+	# Create symlink in /usr/bin
+	ln -s /usr/share/ultimate-linux-suite/ultimate.sh $(CURDIR)/debian/ultimate-linux-suite/usr/bin/ultimate-linux-suite
+
+	# Copy documentation
+	install -m 644 README.md $(CURDIR)/debian/ultimate-linux-suite/usr/share/doc/ultimate-linux-suite/
+	install -m 644 CHANGELOG.md $(CURDIR)/debian/ultimate-linux-suite/usr/share/doc/ultimate-linux-suite/
+
+override_dh_auto_build:
+	# Nothing to build - pure shell scripts
+
+override_dh_auto_test:
+	# Basic syntax check
+	bash -n ultimate.sh

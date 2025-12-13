@@ -1,0 +1,55 @@
+# Maintainer: Nerds489 <nerds489@github.com>
+
+pkgname=ultimate-linux-suite
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Comprehensive Linux system management toolkit"
+arch=('any')
+url="https://github.com/Nerds489/ultimate-linux-suite"
+license=('MIT')
+depends=('bash' 'coreutils' 'grep' 'sed' 'gawk' 'util-linux')
+optdepends=(
+    'pciutils: PCI device detection'
+    'usbutils: USB device detection'
+    'dmidecode: DMI/SMBIOS hardware info'
+    'smartmontools: disk health monitoring'
+    'flatpak: Flatpak application support'
+    'lsb-release: LSB release information'
+)
+install=$pkgname.install
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Nerds489/$pkgname/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+    cd "$srcdir/$pkgname-$pkgver"
+
+    # Create directories
+    install -d "$pkgdir/usr/share/$pkgname"
+    install -d "$pkgdir/usr/bin"
+    install -d "$pkgdir/usr/share/doc/$pkgname"
+    install -d "$pkgdir/usr/share/licenses/$pkgname"
+
+    # Install main script
+    install -Dm755 ultimate.sh "$pkgdir/usr/share/$pkgname/ultimate.sh"
+
+    # Install directories
+    cp -r lib "$pkgdir/usr/share/$pkgname/"
+    cp -r modules "$pkgdir/usr/share/$pkgname/"
+    cp -r menus "$pkgdir/usr/share/$pkgname/"
+    cp -r backends "$pkgdir/usr/share/$pkgname/"
+    cp -r apps "$pkgdir/usr/share/$pkgname/"
+    cp -r configs "$pkgdir/usr/share/$pkgname/"
+    cp -r drivers "$pkgdir/usr/share/$pkgname/"
+
+    # Create wrapper script
+    cat > "$pkgdir/usr/bin/$pkgname" << 'EOF'
+#!/bin/bash
+exec /usr/share/ultimate-linux-suite/ultimate.sh "$@"
+EOF
+    chmod 755 "$pkgdir/usr/bin/$pkgname"
+
+    # Install documentation
+    install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+    install -Dm644 CHANGELOG.md "$pkgdir/usr/share/doc/$pkgname/CHANGELOG.md"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
