@@ -1,0 +1,30 @@
+# Logs and temp files
+*.log
+*.tmp
+/tmp/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Local overrides
+.env
+.env.local
+*.local.sh
+
+# Runtime files
+.suite-cache/
+.suite-backups/
