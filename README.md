@@ -22,10 +22,12 @@ sudo ./ultimate.sh
 ## Key Features
 
 - **Queue-Based Operations** - Review all changes before execution
-- **Multi-Distro Support** - Works on Debian, Ubuntu, Fedora, Arch, openSUSE, and more
+- **Multi-Distro Support** - Works on Debian, Ubuntu, Fedora, Arch, openSUSE, Alpine, Void, and more
 - **60+ Applications** - Curated app database with cross-distro package mapping
 - **System Optimization** - ZRAM, swappiness, I/O schedulers, kernel tuning
 - **Driver Management** - NVIDIA, AMD, Intel, Broadcom WiFi, VM guest tools
+- **Service Management** - Start, stop, enable, disable services (systemd/OpenRC)
+- **Firewall Management** - Unified interface for ufw, firewalld, and iptables
 - **Recovery Tools** - DNS reset, orphan cleanup, package repair, bootloader fix
 
 ## Installation
@@ -72,9 +74,12 @@ make all-pkgs   # All formats
 | Module | Description |
 |--------|-------------|
 | **Applications** | Browse 60+ apps by category, search, or use preset profiles |
-| **Optimization** | System tuning with profiles (Desktop, Gaming, Laptop, Server) |
 | **Drivers** | GPU drivers, WiFi firmware, VirtualBox/VMware guest tools |
+| **Optimization** | System tuning with profiles (Desktop, Gaming, Laptop, Server) |
 | **Recovery** | Fix packages, reset DNS, clean orphans, repair bootloader |
+| **Services** | Manage system services with systemd or OpenRC support |
+| **Firewall** | Configure firewall rules (ufw/firewalld/iptables) with presets |
+| **Profiles** | Quick setup profiles for different use cases |
 | **Queue** | Review and execute all pending operations |
 
 ## Queue System
@@ -101,6 +106,8 @@ Nothing executes immediately. All operations are queued for review:
 | **Fedora** | Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux |
 | **Arch** | Arch Linux, Manjaro, EndeavourOS, Garuda, Artix |
 | **openSUSE** | openSUSE Leap, openSUSE Tumbleweed, SLES |
+| **Alpine** | Alpine Linux |
+| **Void** | Void Linux |
 | **Security** | Kali Linux, Parrot OS |
 
 Unknown distributions fall back to generic mode with basic functionality.
@@ -166,7 +173,10 @@ ultimate-linux-suite/
 │   ├── apps.sh           # Application installer
 │   ├── optimize.sh       # System optimization
 │   ├── drivers.sh        # Driver management
-│   └── recovery.sh       # Recovery tools
+│   ├── recovery.sh       # Recovery tools
+│   ├── services.sh       # Service management (systemd/OpenRC)
+│   ├── firewall.sh       # Firewall management (ufw/firewalld)
+│   └── setup_profiles.sh # Quick setup profiles
 ├── apps/                 # Application database
 │   └── database.sh       # 60+ app definitions
 ├── backends/             # Distro-specific mappings
