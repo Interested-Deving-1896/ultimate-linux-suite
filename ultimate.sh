@@ -56,6 +56,7 @@ source "$SUITE_ROOT/modules/apps.sh"
 source "$SUITE_ROOT/modules/drivers.sh"
 source "$SUITE_ROOT/modules/optimize.sh"
 source "$SUITE_ROOT/modules/recovery.sh"
+source "$SUITE_ROOT/modules/services.sh"
 source "$SUITE_ROOT/modules/setup_profiles.sh"
 
 # ============================================================================
@@ -184,6 +185,7 @@ initialize() {
     drivers_init 2>/dev/null || true
     optimize_init 2>/dev/null || true
     recovery_init 2>/dev/null || true
+    services_init 2>/dev/null || true
     profiles_init 2>/dev/null || true
 
     log_debug "Initialization complete"

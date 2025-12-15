@@ -28,6 +28,9 @@ pkg_update() {
         zypper)
             zypper refresh -q
             ;;
+        apk)
+            apk update
+            ;;
         *)
             log_error "Unsupported package manager: $PKG_MANAGER"
             return 1
@@ -65,6 +68,9 @@ pkg_install() {
         zypper)
             zypper install -y -q "${packages[@]}"
             ;;
+        apk)
+            apk add --no-cache "${packages[@]}"
+            ;;
         *)
             log_error "Unsupported package manager: $PKG_MANAGER"
             return 1
@@ -100,6 +106,9 @@ pkg_remove() {
         zypper)
             zypper remove -y -q "${packages[@]}"
             ;;
+        apk)
+            apk del "${packages[@]}"
+            ;;
         *)
             log_error "Unsupported package manager: $PKG_MANAGER"
             return 1
@@ -126,6 +135,9 @@ pkg_is_installed() {
         zypper)
             rpm -q "$pkg" &>/dev/null
             ;;
+        apk)
+            apk info -e "$pkg" &>/dev/null
+            ;;
         *)
             return 1
             ;;
@@ -151,6 +163,9 @@ pkg_search() {
             ;;
         zypper)
             zypper search "$query"
+            ;;
+        apk)
+            apk search "$query"
             ;;
         *)
             log_error "Unsupported package manager"
@@ -218,6 +233,19 @@ pkg_name() {
         [dialog]="dialog"
     )
 
+    declare -A apk_map=(
+        [build-essential]="build-base"
+        [kernel-headers]="linux-headers"
+        [dkms]="dkms"
+        [git]="git"
+        [curl]="curl"
+        [wget]="wget"
+        [vim]="vim"
+        [htop]="htop"
+        [neofetch]="neofetch"
+        [dialog]="dialog"
+    )
+
     case "$PKG_MANAGER" in
         apt)
             echo "${apt_map[$generic]:-$generic}"
@@ -230,6 +258,9 @@ pkg_name() {
             ;;
         zypper)
             echo "${zypper_map[$generic]:-$generic}"
+            ;;
+        apk)
+            echo "${apk_map[$generic]:-$generic}"
             ;;
         *)
             echo "$generic"
@@ -270,6 +301,9 @@ pkg_fix() {
         zypper)
             zypper verify --recommends
             ;;
+        apk)
+            apk fix
+            ;;
         *)
             log_error "Unsupported package manager"
             return 1
@@ -302,6 +336,9 @@ pkg_clean() {
         zypper)
             zypper clean -a
             ;;
+        apk)
+            apk cache clean 2>/dev/null || rm -rf /var/cache/apk/*
+            ;;
         *)
             log_error "Unsupported package manager"
             return 1
@@ -309,4 +346,158 @@ pkg_clean() {
     esac
 
     log_success "Cache cleaned"
+}
+
+# ============================================================================
+# Universal Package Managers (Snap, Flatpak)
+# ============================================================================
+
+# Check if Snap is available
+snap_available() {
+    command -v snap &>/dev/null && systemctl is-active snapd &>/dev/null
+}
+
+# Install Snap package
+# Usage: snap_install PACKAGE [--classic]
+snap_install() {
+    local pkg="$1"
+    local classic="${2:-}"
+
+    if ! snap_available; then
+        log_error "Snap is not available on this system"
+        return 1
+    fi
+
+    log_info "Installing snap: $pkg"
+    if [[ "$classic" == "--classic" ]]; then
+        snap install "$pkg" --classic
+    else
+        snap install "$pkg"
+    fi
+}
+
+# Remove Snap package
+snap_remove() {
+    local pkg="$1"
+
+    if ! snap_available; then
+        log_error "Snap is not available"
+        return 1
+    fi
+
+    log_info "Removing snap: $pkg"
+    snap remove "$pkg"
+}
+
+# Check if Snap package is installed
+snap_is_installed() {
+    local pkg="$1"
+    snap_available && snap list "$pkg" &>/dev/null
+}
+
+# List installed Snaps
+snap_list() {
+    if ! snap_available; then
+        log_warn "Snap is not available"
+        return 1
+    fi
+    snap list
+}
+
+# Check if Flatpak is available
+flatpak_available() {
+    command -v flatpak &>/dev/null
+}
+
+# Install Flatpak package
+# Usage: flatpak_install APP_ID [--user]
+flatpak_install() {
+    local app_id="$1"
+    local user_flag="${2:-}"
+
+    if ! flatpak_available; then
+        log_error "Flatpak is not available on this system"
+        return 1
+    fi
+
+    log_info "Installing flatpak: $app_id"
+    if [[ "$user_flag" == "--user" ]]; then
+        flatpak install -y --user flathub "$app_id"
+    else
+        flatpak install -y flathub "$app_id"
+    fi
+}
+
+# Remove Flatpak package
+flatpak_remove() {
+    local app_id="$1"
+
+    if ! flatpak_available; then
+        log_error "Flatpak is not available"
+        return 1
+    fi
+
+    log_info "Removing flatpak: $app_id"
+    flatpak uninstall -y "$app_id"
+}
+
+# Check if Flatpak is installed
+flatpak_is_installed() {
+    local app_id="$1"
+    flatpak_available && flatpak list --app 2>/dev/null | grep -q "$app_id"
+}
+
+# List installed Flatpaks
+flatpak_list() {
+    if ! flatpak_available; then
+        log_warn "Flatpak is not available"
+        return 1
+    fi
+    flatpak list --app
+}
+
+# Setup Flathub repository
+flatpak_setup_flathub() {
+    if ! flatpak_available; then
+        log_error "Flatpak is not available"
+        return 1
+    fi
+
+    if ! flatpak remotes | grep -q flathub; then
+        log_info "Adding Flathub repository..."
+        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+        log_success "Flathub added"
+    else
+        log_info "Flathub already configured"
+    fi
+}
+
+# ============================================================================
+# Alpine Linux (apk) Support
+# ============================================================================
+
+# Check if apk is available (Alpine Linux)
+apk_available() {
+    command -v apk &>/dev/null
+}
+
+# Add apk to package manager detection in os_detect.sh
+# This function handles apk operations when PKG_MANAGER=apk
+pkg_install_apk() {
+    local packages=("$@")
+    apk add --no-cache "${packages[@]}"
+}
+
+pkg_remove_apk() {
+    local packages=("$@")
+    apk del "${packages[@]}"
+}
+
+pkg_update_apk() {
+    apk update
+}
+
+pkg_is_installed_apk() {
+    local pkg="$1"
+    apk info -e "$pkg" &>/dev/null
 }

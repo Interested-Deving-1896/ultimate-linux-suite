@@ -93,6 +93,10 @@ _determine_family() {
             OS_FAMILY="suse"
             return 0
             ;;
+        alpine)
+            OS_FAMILY="alpine"
+            return 0
+            ;;
     esac
 
     # Check ID_LIKE for derivatives
@@ -139,6 +143,9 @@ _set_pkg_manager() {
         suse)
             PKG_MANAGER="zypper"
             ;;
+        alpine)
+            PKG_MANAGER="apk"
+            ;;
         *)
             # Try to detect by availability
             if command -v apt &>/dev/null; then
@@ -149,6 +156,8 @@ _set_pkg_manager() {
                 PKG_MANAGER="pacman"
             elif command -v zypper &>/dev/null; then
                 PKG_MANAGER="zypper"
+            elif command -v apk &>/dev/null; then
+                PKG_MANAGER="apk"
             else
                 PKG_MANAGER="unknown"
                 return 1
@@ -189,6 +198,9 @@ _set_uls_distro() {
             ;;
         parrot)
             ULS_DISTRO="parrot"
+            ;;
+        alpine)
+            ULS_DISTRO="alpine"
             ;;
         *)
             ULS_DISTRO="generic"
