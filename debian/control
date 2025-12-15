@@ -1,0 +1,29 @@
+Source: ultimate-linux-suite
+Section: admin
+Priority: optional
+Maintainer: Nerds489 <nerds489@github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.0
+Homepage: https://github.com/Nerds489/ultimate-linux-suite
+Rules-Requires-Root: no
+
+Package: ultimate-linux-suite
+Architecture: all
+Depends: bash (>= 4.0), gawk
+Recommends: pciutils, usbutils, dmidecode, smartmontools, lsb-release
+Suggests: flatpak, snapd
+Description: Comprehensive Linux system management toolkit
+ Ultimate Linux Suite is a script-only, clone-and-run Linux toolkit
+ providing unified system management across multiple distributions.
+ .
+ Features include:
+  - Multi-distro package management abstraction
+  - Queue-based operation system
+  - 60+ application installer with cross-distro mapping
+  - System optimization (ZRAM, THP, BBR, swappiness)
+  - Driver management (NVIDIA, AMD, Intel, Broadcom Wi-Fi)
+  - Recovery tools (DNS reset, orphan cleanup, package repair)
+  - Hardware and OS detection
+ .
+ Supported distributions: Arch, Debian, Ubuntu, Fedora, openSUSE,
+ Kali Linux, Parrot OS, and many derivatives.

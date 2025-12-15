@@ -1,0 +1,23 @@
+ultimate-linux-suite (1.1.0-1) unstable; urgency=medium
+
+  * Sync repo with packaged version
+  * Add queue system for staged operations
+  * Add comprehensive app database with 60+ applications
+  * Enhanced hardware detection (WiFi, battery, form factor)
+  * Enhanced OS detection (init system, desktop environment)
+  * Fix silent failures on Debian-based distros (Kali, Ubuntu, Parrot)
+  * Proper debian packaging structure
+
+ -- Nerds489 <nerds489@github.com>  Sun, 15 Dec 2024 12:00:00 +0000
+
+ultimate-linux-suite (1.0.0-1) unstable; urgency=medium
+
+  * Initial release
+  * Multi-distro support (Arch, Debian, Ubuntu, Fedora, openSUSE)
+  * Security distro support (Kali, Parrot)
+  * Application installer with presets
+  * Driver management (NVIDIA, AMD, Intel, Broadcom)
+  * System optimization profiles
+  * Recovery tools
+
+ -- Nerds489 <nerds489@github.com>  Sat, 14 Dec 2024 08:00:00 +0000

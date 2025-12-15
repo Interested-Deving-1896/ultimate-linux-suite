@@ -24,16 +24,26 @@ queue_init() {
     QUEUE_TYPES=()
     QUEUE_DESCRIPTIONS=()
 
-    # Set up queue file for persistence
+    # Set up queue file for persistence with secure permissions
     if [[ "$(id -u)" -eq 0 ]]; then
         QUEUE_FILE="/var/cache/ultimate-linux-suite/queue.txt"
-        mkdir -p "$(dirname "$QUEUE_FILE")" 2>/dev/null
     else
         QUEUE_FILE="${HOME}/.cache/ultimate-linux-suite/queue.txt"
-        mkdir -p "$(dirname "$QUEUE_FILE")" 2>/dev/null
     fi
 
-    # Load saved queue if exists
+    # Create directory with restrictive permissions
+    local queue_dir
+    queue_dir="$(dirname "$QUEUE_FILE")"
+    if [[ ! -d "$queue_dir" ]]; then
+        mkdir -p "$queue_dir" 2>/dev/null && chmod 700 "$queue_dir"
+    fi
+
+    # Create queue file with restrictive permissions if it doesn't exist
+    if [[ ! -f "$QUEUE_FILE" ]]; then
+        touch "$QUEUE_FILE" 2>/dev/null && chmod 600 "$QUEUE_FILE"
+    fi
+
+    # Load saved queue if exists and is safe
     queue_load
 
     log_debug "Queue system initialized"

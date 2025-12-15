@@ -5,6 +5,46 @@ All notable changes to Ultimate Linux Suite will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2024-12-15
+
+### Added
+- **Queue System** - Stage operations before execution for review
+  - Queue packages for install/remove
+  - Queue sysctl settings
+  - Queue service actions
+  - Queue arbitrary commands
+  - Review, modify, and execute queued operations
+- **Application Database** - Comprehensive cross-distro package mapping
+  - 60+ applications with APT, DNF, Pacman, Zypper, and Flatpak mappings
+  - Categories: Browsers, Development, Gaming, Media, Communication, Productivity, Utilities
+  - Automatic package name translation across distributions
+- **Enhanced Hardware Detection**
+  - WiFi chipset detection (Intel, Broadcom, Realtek, Atheros, MediaTek)
+  - WiFi driver identification
+  - Battery detection for laptops
+  - Form factor detection (desktop/laptop)
+  - CPU vendor and flags detection
+  - Available RAM tracking
+  - Filesystem type detection
+- **Enhanced OS Detection**
+  - Init system detection (systemd, openrc, sysvinit, runit)
+  - Desktop environment detection
+  - Display server detection (X11/Wayland)
+- **Debian Packaging Compliance**
+  - Full manpage for /usr/bin/ultimate-linux-suite
+  - Lintian clean (0 errors, 0 warnings)
+  - Removed essential package dependencies
+  - Added debian/watch for upstream monitoring
+
+### Fixed
+- Silent failures on Debian-based distros (Kali, Ubuntu, Parrot)
+- Package and repo structure sync issues
+- Proper debian packaging with correct file paths
+
+### Changed
+- Restructured codebase to match packaged version
+- Improved module initialization error handling
+
 ## [1.0.0] - 2024-12-14
 
 ### Added

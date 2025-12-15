@@ -1,0 +1,48 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# No build step needed - pure shell scripts
+
+override_dh_auto_install:
+	# Create directory structure
+	install -d $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite
+	install -d $(CURDIR)/debian/ultimate-linux-suite/usr/bin
+	install -d $(CURDIR)/debian/ultimate-linux-suite/usr/share/man/man1
+
+	# Install main script with execute permissions
+	install -m 755 suite.sh $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+
+	# Install library and module files (not executable - they're sourced)
+	find lib apps modules menus backends -type f -name "*.sh" -exec \
+		install -m 644 -D {} $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/{} \;
+
+	# Copy configuration files and driver directories
+	cp -r configs $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+	cp -r drivers $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/
+
+	# Set proper permissions on config files
+	find $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite/configs -type f -exec chmod 644 {} \;
+
+	# Remove shebangs from sourced library files (lintian: script-not-executable)
+	find $(CURDIR)/debian/ultimate-linux-suite/usr/share/ultimate-linux-suite \
+		-type f \( -path "*/lib/*.sh" -o -path "*/backends/*.sh" -o \
+		-path "*/modules/*.sh" -o -path "*/menus/*.sh" -o -path "*/apps/*.sh" \) \
+		-exec sed -i '1{/^#!\/usr\/bin\/env bash/d; /^#!\/bin\/bash/d}' {} \;
+
+	# Create symlink for command
+	ln -sf ../share/ultimate-linux-suite/suite.sh $(CURDIR)/debian/ultimate-linux-suite/usr/bin/ultimate-linux-suite
+
+	# Install manpage
+	install -m 644 debian/ultimate-linux-suite.1 $(CURDIR)/debian/ultimate-linux-suite/usr/share/man/man1/
+	gzip -9fn $(CURDIR)/debian/ultimate-linux-suite/usr/share/man/man1/ultimate-linux-suite.1
+
+override_dh_auto_test:
+	# Run basic syntax check on main script
+	bash -n suite.sh
+	# Run syntax check on all shell scripts
+	for f in lib/*.sh modules/*.sh menus/*.sh backends/*.sh apps/*.sh; do \
+		bash -n "$$f" || exit 1; \
+	done

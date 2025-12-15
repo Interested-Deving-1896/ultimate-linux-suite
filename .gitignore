@@ -35,3 +35,13 @@ dist/
 *.deb
 *.rpm
 *.pkg.tar.*
+*.buildinfo
+*.changes
+
+# Debian build artifacts
+debian-backup-*/
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/ultimate-linux-suite.substvars
+debian/ultimate-linux-suite/
