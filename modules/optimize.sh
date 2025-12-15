@@ -10,6 +10,111 @@
 readonly _OPTIMIZE_MODULE_LOADED=1
 
 # ============================================================================
+# Safe Execution Helpers (replaces dangerous queue_command)
+# ============================================================================
+
+# Safely enable ZRAM with validated size
+# Usage: _safe_enable_zram SIZE_MB
+_safe_enable_zram() {
+    local size_mb="$1"
+    # Validate size is numeric and reasonable (1MB - 64GB)
+    if [[ ! "$size_mb" =~ ^[0-9]+$ ]] || [[ "$size_mb" -lt 1 ]] || [[ "$size_mb" -gt 65536 ]]; then
+        log_error "Invalid ZRAM size: $size_mb"
+        return 1
+    fi
+    log_info "Enabling ZRAM with ${size_mb}MB..."
+    modprobe zram 2>/dev/null || { log_error "Failed to load zram module"; return 1; }
+    echo "${size_mb}M" > /sys/block/zram0/disksize 2>/dev/null || { log_error "Failed to set ZRAM size"; return 1; }
+    mkswap /dev/zram0 &>/dev/null || { log_error "Failed to create swap on ZRAM"; return 1; }
+    swapon -p 100 /dev/zram0 &>/dev/null || { log_error "Failed to enable ZRAM swap"; return 1; }
+    log_success "ZRAM enabled with ${size_mb}MB"
+    return 0
+}
+
+# Safely disable ZRAM
+_safe_disable_zram() {
+    log_info "Disabling ZRAM..."
+    swapoff /dev/zram0 2>/dev/null
+    rmmod zram 2>/dev/null
+    log_success "ZRAM disabled"
+    return 0
+}
+
+# Safely set THP mode with validation
+# Usage: _safe_set_thp MODE
+_safe_set_thp() {
+    local mode="$1"
+    # Validate mode
+    if [[ ! "$mode" =~ ^(always|madvise|never)$ ]]; then
+        log_error "Invalid THP mode: $mode"
+        return 1
+    fi
+    if [[ ! -f /sys/kernel/mm/transparent_hugepage/enabled ]]; then
+        log_error "THP not available on this system"
+        return 1
+    fi
+    log_info "Setting THP to $mode..."
+    echo "$mode" > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || { log_error "Failed to set THP"; return 1; }
+    log_success "THP set to $mode"
+    return 0
+}
+
+# Safely set CPU governor with validation
+# Usage: _safe_set_cpu_governor GOVERNOR
+_safe_set_cpu_governor() {
+    local gov="$1"
+    # Validate governor name
+    if [[ ! "$gov" =~ ^[a-z_-]+$ ]]; then
+        log_error "Invalid governor name: $gov"
+        return 1
+    fi
+    # Verify governor is available
+    local available
+    available=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors 2>/dev/null)
+    if [[ ! " $available " =~ " $gov " ]]; then
+        log_error "Governor '$gov' not available. Available: $available"
+        return 1
+    fi
+    log_info "Setting CPU governor to $gov..."
+    local success=0
+    for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+        [[ -f "$cpu" ]] && echo "$gov" > "$cpu" 2>/dev/null && ((success++))
+    done
+    if [[ $success -gt 0 ]]; then
+        log_success "Set governor to $gov on $success CPUs"
+        return 0
+    else
+        log_error "Failed to set CPU governor"
+        return 1
+    fi
+}
+
+# Safely run gsettings command (for desktop tweaks)
+# Usage: _safe_gsettings SCHEMA KEY VALUE
+_safe_gsettings() {
+    local schema="$1"
+    local key="$2"
+    local value="$3"
+    # Validate schema format (org.something.something)
+    if [[ ! "$schema" =~ ^org\.[a-zA-Z0-9.-]+$ ]]; then
+        log_error "Invalid gsettings schema: $schema"
+        return 1
+    fi
+    # Validate key format
+    if [[ ! "$key" =~ ^[a-zA-Z0-9-]+$ ]]; then
+        log_error "Invalid gsettings key: $key"
+        return 1
+    fi
+    if ! cmd_exists gsettings; then
+        log_error "gsettings not available"
+        return 1
+    fi
+    gsettings set "$schema" "$key" "$value" 2>/dev/null || { log_error "Failed to set $schema $key"; return 1; }
+    log_success "Set $key to $value"
+    return 0
+}
+
+# ============================================================================
 # Current Settings Detection
 # ============================================================================
 
@@ -216,20 +321,25 @@ configure_zram() {
     case "$MENU_CHOICE" in
         1)
             local size_mb=$((RAM_TOTAL_GB * 1024 / 2))
-            queue_command "modprobe zram && echo ${size_mb}M > /sys/block/zram0/disksize && mkswap /dev/zram0 && swapon -p 100 /dev/zram0" "Enable ZRAM (${size_mb}MB)"
-            log_success "Queued: Enable ZRAM with ${size_mb}MB"
+            if confirm "Enable ZRAM (${size_mb}MB) now?"; then
+                _safe_enable_zram "$size_mb"
+            fi
             ;;
         2)
             printf "Enter ZRAM size in MB: "
             read -r size_mb
             if [[ "$size_mb" =~ ^[0-9]+$ ]]; then
-                queue_command "modprobe zram && echo ${size_mb}M > /sys/block/zram0/disksize && mkswap /dev/zram0 && swapon -p 100 /dev/zram0" "Enable ZRAM (${size_mb}MB)"
-                log_success "Queued: Enable ZRAM with ${size_mb}MB"
+                if confirm "Enable ZRAM (${size_mb}MB) now?"; then
+                    _safe_enable_zram "$size_mb"
+                fi
+            else
+                log_error "Invalid size - must be a number"
             fi
             ;;
         3)
-            queue_command "swapoff /dev/zram0 2>/dev/null; rmmod zram 2>/dev/null" "Disable ZRAM"
-            log_success "Queued: Disable ZRAM"
+            if confirm "Disable ZRAM now?"; then
+                _safe_disable_zram
+            fi
             ;;
     esac
     pause
@@ -264,8 +374,9 @@ configure_thp() {
     esac
 
     if [[ -n "$mode" ]]; then
-        queue_command "echo $mode > /sys/kernel/mm/transparent_hugepage/enabled" "Set THP to $mode"
-        log_success "Queued: THP = $mode"
+        if confirm "Set THP to $mode now?"; then
+            _safe_set_thp "$mode"
+        fi
     fi
     pause
 }
@@ -414,8 +525,9 @@ set_cpu_governor() {
     read -r gov
 
     if [[ -n "$gov" ]]; then
-        queue_command "for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do echo $gov > \$cpu 2>/dev/null; done" "Set CPU governor to $gov"
-        log_success "Queued: CPU governor = $gov"
+        if confirm "Set CPU governor to $gov now?"; then
+            _safe_set_cpu_governor "$gov"
+        fi
     fi
 
     pause
@@ -459,15 +571,14 @@ gnome_tweaks() {
 
     case "$MENU_CHOICE" in
         1)
-            queue_command "gsettings set org.gnome.desktop.interface enable-animations false" "Disable GNOME animations"
-            log_success "Queued: Disable GNOME animations"
+            _safe_gsettings "org.gnome.desktop.interface" "enable-animations" "false"
             ;;
         2)
-            queue_command "gsettings set org.gnome.desktop.interface enable-animations true" "Enable GNOME animations"
-            log_success "Queued: Enable GNOME animations"
+            _safe_gsettings "org.gnome.desktop.interface" "enable-animations" "true"
             ;;
         3)
-            queue_command "gsettings set org.gnome.desktop.interface enable-animations true && gsettings set org.gnome.desktop.interface cursor-blink-time 1200" "Reduce GNOME animation speed"
+            _safe_gsettings "org.gnome.desktop.interface" "enable-animations" "true"
+            _safe_gsettings "org.gnome.desktop.interface" "cursor-blink-time" "1200"
             ;;
     esac
     pause
@@ -509,12 +620,10 @@ cinnamon_tweaks() {
 
     case "$MENU_CHOICE" in
         1)
-            queue_command "gsettings set org.cinnamon desktop-effects false" "Disable Cinnamon effects"
-            log_success "Queued: Disable Cinnamon effects"
+            _safe_gsettings "org.cinnamon" "desktop-effects" "false"
             ;;
         2)
-            queue_command "gsettings set org.cinnamon desktop-effects true" "Enable Cinnamon effects"
-            log_success "Queued: Enable Cinnamon effects"
+            _safe_gsettings "org.cinnamon" "desktop-effects" "true"
             ;;
     esac
     pause

@@ -27,14 +27,19 @@ readonly -a QUEUE_ALLOWED_SYSCTL=(
     "vm.dirty_background_ratio"
     "vm.dirty_expire_centisecs"
     "vm.dirty_writeback_centisecs"
+    "vm.laptop_mode"
+    "fs.file-max"
     "net.ipv4.tcp_congestion_control"
     "net.core.default_qdisc"
     "net.ipv6.conf.all.disable_ipv6"
     "net.ipv6.conf.default.disable_ipv6"
     "net.core.rmem_max"
     "net.core.wmem_max"
+    "net.core.somaxconn"
+    "net.core.netdev_max_backlog"
     "net.ipv4.tcp_rmem"
     "net.ipv4.tcp_wmem"
+    "net.ipv4.tcp_max_syn_backlog"
     "kernel.nmi_watchdog"
 )
 
@@ -512,6 +517,17 @@ queue_execute() {
                     printf "  Would set: %s\n" "$item"
                 else
                     if sysctl -w "$key=$value" &>/dev/null; then
+                        # Persist sysctl changes to config file
+                        local conf="/etc/sysctl.d/99-ultimate-linux-suite.conf"
+                        if [[ ! -f "$conf" ]]; then
+                            printf '# Ultimate Linux Suite optimizations\n' > "$conf" 2>/dev/null
+                        fi
+                        # Update existing or append new entry
+                        if grep -q "^${key}[[:space:]]*=" "$conf" 2>/dev/null; then
+                            sed -i "s|^${key}[[:space:]]*=.*|${key} = ${value}|" "$conf" 2>/dev/null
+                        else
+                            printf '%s = %s\n' "$key" "$value" >> "$conf" 2>/dev/null
+                        fi
                         ((success++))
                     else
                         ((failed++))
