@@ -10,6 +10,97 @@
 [[ -n "${_QUEUE_LOADED:-}" ]] && return 0
 readonly _QUEUE_LOADED=1
 
+# Allowed queue types (security whitelist)
+readonly -a QUEUE_ALLOWED_TYPES=(
+    "pkg_install"
+    "pkg_remove"
+    "sysctl"
+    "service"
+    "file_write"
+)
+
+# Allowed sysctl keys (security whitelist)
+readonly -a QUEUE_ALLOWED_SYSCTL=(
+    "vm.swappiness"
+    "vm.vfs_cache_pressure"
+    "vm.dirty_ratio"
+    "vm.dirty_background_ratio"
+    "vm.dirty_expire_centisecs"
+    "vm.dirty_writeback_centisecs"
+    "net.ipv4.tcp_congestion_control"
+    "net.core.default_qdisc"
+    "net.ipv6.conf.all.disable_ipv6"
+    "net.ipv6.conf.default.disable_ipv6"
+    "net.core.rmem_max"
+    "net.core.wmem_max"
+    "net.ipv4.tcp_rmem"
+    "net.ipv4.tcp_wmem"
+    "kernel.nmi_watchdog"
+)
+
+# Allowed service actions (security whitelist)
+readonly -a QUEUE_ALLOWED_SERVICE_ACTIONS=(
+    "start"
+    "stop"
+    "restart"
+    "reload"
+    "enable"
+    "disable"
+)
+
+# Validate package name (alphanumeric, dots, dashes, underscores, plus)
+# Returns 0 if valid, 1 if invalid
+_queue_validate_package() {
+    local pkg="$1"
+    [[ -z "$pkg" ]] && return 1
+    [[ ${#pkg} -gt 128 ]] && return 1
+    [[ "$pkg" =~ ^[a-zA-Z0-9][a-zA-Z0-9._+-]*$ ]] || return 1
+    return 0
+}
+
+# Validate sysctl key against whitelist
+# Returns 0 if valid, 1 if invalid
+_queue_validate_sysctl_key() {
+    local key="$1"
+    local allowed
+    for allowed in "${QUEUE_ALLOWED_SYSCTL[@]}"; do
+        [[ "$key" == "$allowed" ]] && return 0
+    done
+    return 1
+}
+
+# Validate service action against whitelist
+# Returns 0 if valid, 1 if invalid
+_queue_validate_service_action() {
+    local action="$1"
+    local allowed
+    for allowed in "${QUEUE_ALLOWED_SERVICE_ACTIONS[@]}"; do
+        [[ "$action" == "$allowed" ]] && return 0
+    done
+    return 1
+}
+
+# Validate service name (alphanumeric, dashes, underscores, dots, @)
+# Returns 0 if valid, 1 if invalid
+_queue_validate_service_name() {
+    local name="$1"
+    [[ -z "$name" ]] && return 1
+    [[ ${#name} -gt 256 ]] && return 1
+    [[ "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9._@-]*$ ]] || return 1
+    return 0
+}
+
+# Validate queue type against whitelist
+# Returns 0 if valid, 1 if invalid
+_queue_validate_type() {
+    local type="$1"
+    local allowed
+    for allowed in "${QUEUE_ALLOWED_TYPES[@]}"; do
+        [[ "$type" == "$allowed" ]] && return 0
+    done
+    return 1
+}
+
 # Queue storage
 declare -ga QUEUE_ITEMS=()
 declare -ga QUEUE_TYPES=()
@@ -85,11 +176,27 @@ queue_sysctl() {
     queue_add "sysctl" "$key=$value" "$desc"
 }
 
-# Add command to queue
+# DEPRECATED: Arbitrary command execution disabled for security
+# Use specific queue functions instead (queue_sysctl, queue_service, etc.)
 queue_command() {
-    local cmd="$1"
-    local desc="${2:-Run: $cmd}"
-    queue_add "command" "$cmd" "$desc"
+    log_error "queue_command is disabled for security reasons"
+    log_info "Use queue_sysctl, queue_service, or queue_file_write instead"
+    return 1
+}
+
+# Add file write to queue (for sysctl persistence, etc.)
+# Usage: queue_file_write CONTENT FILEPATH [DESCRIPTION]
+queue_file_write() {
+    local content="$1"
+    local filepath="$2"
+    local desc="${3:-Write to: $filepath}"
+    # Security: only allow specific paths
+    if [[ ! "$filepath" =~ ^/etc/sysctl\.d/[a-zA-Z0-9._-]+\.conf$ ]] && \
+       [[ "$filepath" != "/etc/sysctl.conf" ]]; then
+        log_error "Cannot queue write to disallowed path: $filepath"
+        return 1
+    fi
+    queue_add "file_write" "${content}|${filepath}" "$desc"
 }
 
 # Add service action to queue
@@ -384,12 +491,26 @@ queue_execute() {
                 ;;
             sysctl)
                 log_step $step "" "$desc"
+                local key value
+                key="${item%%=*}"
+                value="${item#*=}"
+                # Security: validate sysctl key against whitelist
+                if ! _queue_validate_sysctl_key "$key"; then
+                    log_error "Blocked disallowed sysctl key: $key"
+                    ((failed++))
+                    ((step++))
+                    continue
+                fi
+                # Validate value is reasonable (numeric or simple string)
+                if [[ ! "$value" =~ ^[a-zA-Z0-9\ _.-]+$ ]]; then
+                    log_error "Invalid sysctl value format: $value"
+                    ((failed++))
+                    ((step++))
+                    continue
+                fi
                 if [[ $dry_run -eq 1 ]]; then
                     printf "  Would set: %s\n" "$item"
                 else
-                    local key value
-                    key="${item%%=*}"
-                    value="${item#*=}"
                     if sysctl -w "$key=$value" &>/dev/null; then
                         ((success++))
                     else
@@ -399,16 +520,27 @@ queue_execute() {
                 fi
                 ((step++))
                 ;;
-            command)
+            file_write)
+                # Safe file write operation (content|path format)
                 log_step $step "" "$desc"
+                local content="${item%%|*}"
+                local filepath="${item#*|}"
+                # Security: only allow specific paths
+                if [[ ! "$filepath" =~ ^/etc/sysctl\.d/ ]] && \
+                   [[ ! "$filepath" =~ ^/etc/sysctl\.conf$ ]]; then
+                    log_error "Blocked write to disallowed path: $filepath"
+                    ((failed++))
+                    ((step++))
+                    continue
+                fi
                 if [[ $dry_run -eq 1 ]]; then
-                    printf "  Would run: %s\n" "$item"
+                    printf "  Would write to: %s\n" "$filepath"
                 else
-                    if eval "$item"; then
+                    if printf '%s\n' "$content" > "$filepath" 2>/dev/null; then
                         ((success++))
                     else
                         ((failed++))
-                        log_warn "Command failed: $item"
+                        log_warn "Failed to write: $filepath"
                     fi
                 fi
                 ((step++))
@@ -417,6 +549,19 @@ queue_execute() {
                 log_step $step "" "$desc"
                 local action="${item%%:*}"
                 local service="${item#*:}"
+                # Security: validate action and service name
+                if ! _queue_validate_service_action "$action"; then
+                    log_error "Blocked invalid service action: $action"
+                    ((failed++))
+                    ((step++))
+                    continue
+                fi
+                if ! _queue_validate_service_name "$service"; then
+                    log_error "Blocked invalid service name: $service"
+                    ((failed++))
+                    ((step++))
+                    continue
+                fi
                 if [[ $dry_run -eq 1 ]]; then
                     printf "  Would %s: %s\n" "$action" "$service"
                 else
@@ -463,19 +608,75 @@ queue_save() {
     log_debug "Queue saved to $QUEUE_FILE"
 }
 
-# Load queue from file
+# Load queue from file with validation
 queue_load() {
     [[ -z "$QUEUE_FILE" ]] && return 1
     [[ ! -f "$QUEUE_FILE" ]] && return 1
 
+    # Security: verify file ownership matches current user or root
+    local file_owner
+    file_owner=$(stat -c '%u' "$QUEUE_FILE" 2>/dev/null)
+    local current_user
+    current_user=$(id -u)
+    if [[ "$file_owner" != "$current_user" ]] && [[ "$file_owner" != "0" ]]; then
+        log_error "Queue file has unsafe ownership, refusing to load"
+        return 1
+    fi
+
+    local skipped=0
     while IFS='|' read -r type item desc || [[ -n "$type" ]]; do
+        # Skip comments and empty lines
         [[ "$type" =~ ^#.*$ ]] && continue
         [[ -z "$type" ]] && continue
+
+        # Validate type against whitelist
+        if ! _queue_validate_type "$type"; then
+            log_warn "Skipping invalid queue type: $type"
+            ((skipped++))
+            continue
+        fi
+
+        # Validate item based on type
+        case "$type" in
+            pkg_install|pkg_remove)
+                if ! _queue_validate_package "$item"; then
+                    log_warn "Skipping invalid package name: $item"
+                    ((skipped++))
+                    continue
+                fi
+                ;;
+            sysctl)
+                local key="${item%%=*}"
+                if ! _queue_validate_sysctl_key "$key"; then
+                    log_warn "Skipping disallowed sysctl key: $key"
+                    ((skipped++))
+                    continue
+                fi
+                ;;
+            service)
+                local action="${item%%:*}"
+                local service="${item#*:}"
+                if ! _queue_validate_service_action "$action"; then
+                    log_warn "Skipping invalid service action: $action"
+                    ((skipped++))
+                    continue
+                fi
+                if ! _queue_validate_service_name "$service"; then
+                    log_warn "Skipping invalid service name: $service"
+                    ((skipped++))
+                    continue
+                fi
+                ;;
+        esac
 
         QUEUE_TYPES+=("$type")
         QUEUE_ITEMS+=("$item")
         QUEUE_DESCRIPTIONS+=("$desc")
     done < "$QUEUE_FILE"
+
+    if [[ $skipped -gt 0 ]]; then
+        log_warn "Skipped $skipped invalid queue items for security"
+    fi
 
     log_debug "Queue loaded from $QUEUE_FILE"
     return 0

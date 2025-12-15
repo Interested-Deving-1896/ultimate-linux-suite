@@ -346,13 +346,18 @@ cleanup_orphans() {
             ;;
         pacman)
             log_info "Checking for orphan packages..."
-            local orphans
-            orphans=$(pacman -Qdtq 2>/dev/null)
+            local -a orphan_list=()
+            # Safely read orphan packages into array
+            while IFS= read -r pkg; do
+                [[ -n "$pkg" ]] && orphan_list+=("$pkg")
+            done < <(pacman -Qdtq 2>/dev/null)
 
-            if [[ -n "$orphans" ]]; then
-                printf "Orphan packages found:\n%s\n\n" "$orphans"
+            if [[ ${#orphan_list[@]} -gt 0 ]]; then
+                printf "Orphan packages found (%d):\n" "${#orphan_list[@]}"
+                printf "  %s\n" "${orphan_list[@]}"
+                printf "\n"
                 if confirm "Remove these orphan packages?"; then
-                    pacman -Rns --noconfirm $(pacman -Qdtq)
+                    pacman -Rns --noconfirm "${orphan_list[@]}"
                     log_success "Orphan packages removed"
                 fi
             else
@@ -448,6 +453,18 @@ check_disk_health() {
     read -r disk
 
     if [[ -n "$disk" ]]; then
+        # Security: validate disk name to prevent path traversal
+        if [[ ! "$disk" =~ ^[a-zA-Z0-9]+$ ]]; then
+            log_error "Invalid disk name format: $disk"
+            pause
+            return 1
+        fi
+        # Verify it's actually a block device
+        if [[ ! -b "/dev/$disk" ]]; then
+            log_error "Device /dev/$disk does not exist or is not a block device"
+            pause
+            return 1
+        fi
         log_info "Checking /dev/$disk..."
         smartctl -H "/dev/$disk" || true
         smartctl -A "/dev/$disk" 2>/dev/null | head -20 || true

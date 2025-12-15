@@ -126,7 +126,8 @@ apps_get_categories() {
     for entry in "${APP_DATABASE[@]}"; do
         local category
         category=$(echo "$entry" | cut -d'|' -f2)
-        if [[ ! "$seen" =~ "|$category|" ]]; then
+        # Use simple string matching instead of regex for reliability
+        if [[ "$seen" != *"|$category|"* ]]; then
             categories+=("$category")
             seen="${seen}|$category|"
         fi

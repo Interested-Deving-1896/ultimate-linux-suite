@@ -178,9 +178,9 @@ log_progress() {
     local filled=$((current * width / total))
     local empty=$((width - filled))
 
-    printf "\r${BLUE}%s:${RESET} [" "$message"
-    printf "%*s" "$filled" | tr ' ' '#'
-    printf "%*s" "$empty" | tr ' ' '-'
+    printf "\r%b%s:%b [" "${BLUE}" "$message" "${RESET}"
+    printf "%*s" "$filled" "" | tr ' ' '#'
+    printf "%*s" "$empty" "" | tr ' ' '-'
     printf "] %3d%%" "$percent"
 
     # Newline when complete
