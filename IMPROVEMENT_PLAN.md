@@ -84,11 +84,11 @@ Ubuntu, Debian, Linux Mint, Fedora, Arch Linux, Kali, Parrot OS, openSUSE
 Pop!_OS, elementary, Zorin, Manjaro, EndeavourOS, Garuda, Rocky, AlmaLinux, CentOS Stream, RHEL, Oracle Linux, SLES
 
 ### Unsupported (Add Support)
-| Distro | Package Manager | Priority |
-|--------|-----------------|----------|
-| Alpine Linux | apk | HIGH |
-| Void Linux | xbps | MEDIUM |
-| Gentoo | emerge | LOW |
+| Distro | Package Manager | Priority | Status |
+|--------|-----------------|----------|--------|
+| Alpine Linux | apk | HIGH | DONE |
+| Void Linux | xbps | MEDIUM | DONE |
+| Gentoo | emerge | LOW | - |
 
 ### Package Mapping Fixes
 - `wireshark` → `wireshark-qt` for Arch
@@ -157,9 +157,9 @@ Pop!_OS, elementary, Zorin, Manjaro, EndeavourOS, Garuda, Rocky, AlmaLinux, Cent
 - [x] Fix printf format issues
 - [x] Standardize error messages
 
-### Phase 3: Features (v1.2.0) - PARTIAL
+### Phase 3: Features (v1.2.0) - COMPLETE
 - [x] Service management module
-- [ ] Firewall management module
+- [x] Firewall management module (ufw/firewalld/iptables)
 - [ ] Progress indicators
 - [x] Snap support
 - [x] Flatpak support functions
@@ -171,9 +171,9 @@ Pop!_OS, elementary, Zorin, Manjaro, EndeavourOS, Garuda, Rocky, AlmaLinux, Cent
 - [x] Update README
 - [ ] Add inline documentation
 
-### Phase 5: Compatibility (v1.3.0) - PARTIAL
+### Phase 5: Compatibility (v1.3.0) - COMPLETE
 - [x] Alpine Linux support (apk)
-- [ ] Void Linux support (xbps)
+- [x] Void Linux support (xbps)
 - [x] Non-systemd init support (OpenRC in services module)
 
 ---
@@ -256,14 +256,14 @@ execute_queue_item() {
 
 ## Metrics Summary
 
-| Category | Current | Target |
-|----------|---------|--------|
-| Shellcheck errors | 0 | 0 |
-| Shellcheck warnings | 41 | <10 |
-| Security vulnerabilities | 6 | 0 |
-| Documentation score | 7.5/10 | 9/10 |
-| Distro coverage | 8 Tier 1 | 10 Tier 1 |
-| Test coverage | Manual | Automated |
+| Category | Start | Current | Target |
+|----------|-------|---------|--------|
+| Shellcheck errors | 0 | 0 | 0 |
+| Shellcheck warnings | 41 | 13 | <10 |
+| Security vulnerabilities | 6 | 0 | 0 |
+| Documentation score | 7.5/10 | 8.5/10 | 9/10 |
+| Distro coverage | 8 Tier 1 | 10 Tier 1 | 10 Tier 1 |
+| Test coverage | Manual | Manual | Automated |
 
 ---
 

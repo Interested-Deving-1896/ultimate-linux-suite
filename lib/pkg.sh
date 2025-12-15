@@ -31,6 +31,9 @@ pkg_update() {
         apk)
             apk update
             ;;
+        xbps)
+            xbps-install -S
+            ;;
         *)
             log_error "Unsupported package manager: $PKG_MANAGER"
             return 1
@@ -71,6 +74,9 @@ pkg_install() {
         apk)
             apk add --no-cache "${packages[@]}"
             ;;
+        xbps)
+            xbps-install -y "${packages[@]}"
+            ;;
         *)
             log_error "Unsupported package manager: $PKG_MANAGER"
             return 1
@@ -109,6 +115,9 @@ pkg_remove() {
         apk)
             apk del "${packages[@]}"
             ;;
+        xbps)
+            xbps-remove -y "${packages[@]}"
+            ;;
         *)
             log_error "Unsupported package manager: $PKG_MANAGER"
             return 1
@@ -138,6 +147,9 @@ pkg_is_installed() {
         apk)
             apk info -e "$pkg" &>/dev/null
             ;;
+        xbps)
+            xbps-query "$pkg" &>/dev/null
+            ;;
         *)
             return 1
             ;;
@@ -166,6 +178,9 @@ pkg_search() {
             ;;
         apk)
             apk search "$query"
+            ;;
+        xbps)
+            xbps-query -Rs "$query"
             ;;
         *)
             log_error "Unsupported package manager"
@@ -246,6 +261,19 @@ pkg_name() {
         [dialog]="dialog"
     )
 
+    declare -A xbps_map=(
+        [build-essential]="base-devel"
+        [kernel-headers]="linux-headers"
+        [dkms]="dkms"
+        [git]="git"
+        [curl]="curl"
+        [wget]="wget"
+        [vim]="vim"
+        [htop]="htop"
+        [neofetch]="neofetch"
+        [dialog]="dialog"
+    )
+
     case "$PKG_MANAGER" in
         apt)
             echo "${apt_map[$generic]:-$generic}"
@@ -261,6 +289,9 @@ pkg_name() {
             ;;
         apk)
             echo "${apk_map[$generic]:-$generic}"
+            ;;
+        xbps)
+            echo "${xbps_map[$generic]:-$generic}"
             ;;
         *)
             echo "$generic"
@@ -304,6 +335,9 @@ pkg_fix() {
         apk)
             apk fix
             ;;
+        xbps)
+            xbps-pkgdb -a
+            ;;
         *)
             log_error "Unsupported package manager"
             return 1
@@ -338,6 +372,9 @@ pkg_clean() {
             ;;
         apk)
             apk cache clean 2>/dev/null || rm -rf /var/cache/apk/*
+            ;;
+        xbps)
+            xbps-remove -O -y
             ;;
         *)
             log_error "Unsupported package manager"

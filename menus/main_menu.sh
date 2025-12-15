@@ -58,9 +58,10 @@ run_main_menu() {
         printf "  3) Optimization      - System performance tuning\n"
         printf "  4) Recovery          - Repair and maintenance tools\n"
         printf "  5) Services          - Manage system services\n"
-        printf "  6) Profiles          - Quick setup profiles\n"
-        printf "  7) Queue%s   - View/execute pending actions\n" "$queue_label"
-        printf "  8) System Info       - View hardware details\n"
+        printf "  6) Firewall          - Manage firewall rules\n"
+        printf "  7) Profiles          - Quick setup profiles\n"
+        printf "  8) Queue%s   - View/execute pending actions\n" "$queue_label"
+        printf "  9) System Info       - View hardware details\n"
         printf "  0) Exit\n"
         printf "\n"
         printf "Enter choice: "
@@ -83,12 +84,15 @@ run_main_menu() {
                 services_main
                 ;;
             6)
-                profiles_main
+                firewall_main
                 ;;
             7)
-                queue_menu
+                profiles_main
                 ;;
             8)
+                queue_menu
+                ;;
+            9)
                 show_system_info
                 ;;
             0|q|Q|exit)

@@ -97,6 +97,10 @@ _determine_family() {
             OS_FAMILY="alpine"
             return 0
             ;;
+        void)
+            OS_FAMILY="void"
+            return 0
+            ;;
     esac
 
     # Check ID_LIKE for derivatives
@@ -146,6 +150,9 @@ _set_pkg_manager() {
         alpine)
             PKG_MANAGER="apk"
             ;;
+        void)
+            PKG_MANAGER="xbps"
+            ;;
         *)
             # Try to detect by availability
             if command -v apt &>/dev/null; then
@@ -158,6 +165,8 @@ _set_pkg_manager() {
                 PKG_MANAGER="zypper"
             elif command -v apk &>/dev/null; then
                 PKG_MANAGER="apk"
+            elif command -v xbps-install &>/dev/null; then
+                PKG_MANAGER="xbps"
             else
                 PKG_MANAGER="unknown"
                 return 1
@@ -201,6 +210,9 @@ _set_uls_distro() {
             ;;
         alpine)
             ULS_DISTRO="alpine"
+            ;;
+        void)
+            ULS_DISTRO="void"
             ;;
         *)
             ULS_DISTRO="generic"
@@ -380,6 +392,12 @@ uls_is_kali() { [[ "$ULS_DISTRO" == "kali" ]]; }
 
 # Check if Parrot OS
 uls_is_parrot() { [[ "$ULS_DISTRO" == "parrot" ]]; }
+
+# Check if Alpine Linux
+uls_is_alpine() { [[ "$ULS_DISTRO" == "alpine" ]]; }
+
+# Check if Void Linux
+uls_is_void() { [[ "$ULS_DISTRO" == "void" ]]; }
 
 # Check if generic/unknown
 uls_is_generic() { [[ "$ULS_DISTRO" == "generic" ]]; }
