@@ -1,0 +1,329 @@
+name: Build and Release Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (without v prefix)'
+        required: true
+        default: '2.2.0'
+
+env:
+  PACKAGE_NAME: ultimate-linux-suite
+
+jobs:
+  # Build Debian/Ubuntu package
+  build-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev debhelper devscripts fakeroot
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Debian package
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          # Create build directory
+          mkdir -p build/debian
+          cd build/debian
+
+          # Create source tarball
+          mkdir -p ${PACKAGE_NAME}-${VERSION}
+          cp -r ../../ultimate.sh ../../lib ../../modules ../../menus ../../backends ../../apps ../../configs ../../drivers ../../README.md ../../CHANGELOG.md ../../LICENSE ${PACKAGE_NAME}-${VERSION}/
+          tar czf ${PACKAGE_NAME}_${VERSION}.orig.tar.gz ${PACKAGE_NAME}-${VERSION}
+
+          # Copy debian directory
+          cp -r ../../debian ${PACKAGE_NAME}-${VERSION}/
+
+          # Update changelog version
+          cd ${PACKAGE_NAME}-${VERSION}
+          sed -i "1s/.*/${PACKAGE_NAME} (${VERSION}-1) unstable; urgency=medium/" debian/changelog
+
+          # Build package
+          dpkg-buildpackage -us -uc -b
+
+          # Move package to artifacts
+          cd ..
+          mkdir -p ../../artifacts
+          mv *.deb ../../artifacts/
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: artifacts/*.deb
+
+  # Build Fedora/RHEL RPM package
+  build-rpm-fedora:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          dnf install -y rpm-build rpmdevtools
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build RPM package
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          # Setup rpmbuild directories
+          rpmdev-setuptree
+
+          # Create source tarball
+          mkdir -p ${PACKAGE_NAME}-${VERSION}
+          cp -r ultimate.sh lib modules menus backends apps configs drivers README.md CHANGELOG.md LICENSE ${PACKAGE_NAME}-${VERSION}/
+          tar czf ~/rpmbuild/SOURCES/${PACKAGE_NAME}-${VERSION}.tar.gz ${PACKAGE_NAME}-${VERSION}
+
+          # Copy and update spec file
+          cp packaging/rpm/${PACKAGE_NAME}.spec ~/rpmbuild/SPECS/
+          sed -i "s/^Version:.*/Version:        ${VERSION}/" ~/rpmbuild/SPECS/${PACKAGE_NAME}.spec
+
+          # Build RPM
+          rpmbuild -bb ~/rpmbuild/SPECS/${PACKAGE_NAME}.spec
+
+          # Move to artifacts
+          mkdir -p artifacts
+          mv ~/rpmbuild/RPMS/noarch/*.rpm artifacts/
+          # Rename to indicate Fedora
+          cd artifacts
+          for f in *.rpm; do mv "$f" "${f%.rpm}.fedora.rpm"; done
+
+      - name: Upload Fedora RPM
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-fedora-package
+          path: artifacts/*.rpm
+
+  # Build openSUSE RPM package
+  build-rpm-opensuse:
+    runs-on: ubuntu-latest
+    container: opensuse/tumbleweed:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          zypper install -y rpm-build rpmdevtools
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build RPM package
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          # Setup rpmbuild directories
+          rpmdev-setuptree
+
+          # Create source tarball
+          mkdir -p ${PACKAGE_NAME}-${VERSION}
+          cp -r ultimate.sh lib modules menus backends apps configs drivers README.md CHANGELOG.md LICENSE ${PACKAGE_NAME}-${VERSION}/
+          tar czf ~/rpmbuild/SOURCES/${PACKAGE_NAME}-${VERSION}.tar.gz ${PACKAGE_NAME}-${VERSION}
+
+          # Copy and update spec file
+          cp packaging/opensuse/${PACKAGE_NAME}.spec ~/rpmbuild/SPECS/
+          sed -i "s/^Version:.*/Version:        ${VERSION}/" ~/rpmbuild/SPECS/${PACKAGE_NAME}.spec
+
+          # Build RPM
+          rpmbuild -bb ~/rpmbuild/SPECS/${PACKAGE_NAME}.spec
+
+          # Move to artifacts
+          mkdir -p artifacts
+          mv ~/rpmbuild/RPMS/noarch/*.rpm artifacts/
+          # Rename to indicate openSUSE
+          cd artifacts
+          for f in *.rpm; do mv "$f" "${f%.rpm}.opensuse.rpm"; done
+
+      - name: Upload openSUSE RPM
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-opensuse-package
+          path: artifacts/*.rpm
+
+  # Build Arch Linux package
+  build-arch:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel sudo git
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Arch package
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          # Create build user (makepkg refuses to run as root)
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+          # Setup build directory
+          mkdir -p /build
+          cp -r . /build/source
+          chown -R builder:builder /build
+
+          # Create source tarball
+          cd /build
+          mkdir -p ${PACKAGE_NAME}-${VERSION}
+          cp -r source/ultimate.sh source/lib source/modules source/menus source/backends source/apps source/configs source/drivers source/README.md source/CHANGELOG.md source/LICENSE ${PACKAGE_NAME}-${VERSION}/
+          tar czf ${PACKAGE_NAME}-${VERSION}.tar.gz ${PACKAGE_NAME}-${VERSION}
+
+          # Setup PKGBUILD directory
+          mkdir -p pkg
+          cp source/packaging/arch/PKGBUILD pkg/
+          cp source/packaging/arch/*.install pkg/ 2>/dev/null || true
+          mv ${PACKAGE_NAME}-${VERSION}.tar.gz pkg/
+
+          # Update PKGBUILD
+          cd pkg
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
+          sed -i "s|source=.*|source=(\"${PACKAGE_NAME}-${VERSION}.tar.gz\")|" PKGBUILD
+
+          # Create .install file if missing
+          if [ ! -f ${PACKAGE_NAME}.install ]; then
+            cat > ${PACKAGE_NAME}.install << 'INSTALLEOF'
+post_install() {
+    echo "Ultimate Linux Suite installed successfully!"
+    echo "Run 'sudo ultimate-linux-suite' to start."
+}
+
+post_upgrade() {
+    echo "Ultimate Linux Suite upgraded successfully!"
+}
+INSTALLEOF
+          fi
+
+          chown -R builder:builder /build/pkg
+
+          # Build package
+          su builder -c "cd /build/pkg && makepkg -sf --noconfirm --skipchecksums"
+
+          # Move to artifacts
+          mkdir -p /build/artifacts
+          mv /build/pkg/*.pkg.tar.zst /build/artifacts/
+
+          # Copy back to workspace
+          cp -r /build/artifacts ${GITHUB_WORKSPACE}/
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: artifacts/*.pkg.tar.zst
+
+  # Create GitHub Release with all packages
+  release:
+    needs: [build-deb, build-rpm-fedora, build-rpm-opensuse, build-arch]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: packages
+
+      - name: Get version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Organize packages
+        run: |
+          mkdir -p release-packages
+          find packages -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.pkg.tar.zst" \) -exec mv {} release-packages/ \;
+          ls -la release-packages/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "Ultimate Linux Suite v${{ steps.version.outputs.version }}"
+          body: |
+            ## Ultimate Linux Suite v${{ steps.version.outputs.version }}
+
+            ### Installation
+
+            **Debian/Ubuntu:**
+            ```bash
+            sudo dpkg -i ultimate-linux-suite_${{ steps.version.outputs.version }}-1_all.deb
+            ```
+
+            **Fedora/RHEL/CentOS:**
+            ```bash
+            sudo dnf install ./ultimate-linux-suite-${{ steps.version.outputs.version }}-1.noarch.fedora.rpm
+            ```
+
+            **openSUSE:**
+            ```bash
+            sudo zypper install ./ultimate-linux-suite-${{ steps.version.outputs.version }}-0.noarch.opensuse.rpm
+            ```
+
+            **Arch Linux:**
+            ```bash
+            sudo pacman -U ultimate-linux-suite-${{ steps.version.outputs.version }}-1-any.pkg.tar.zst
+            ```
+
+            **From source:**
+            ```bash
+            git clone https://github.com/Nerds489/ultimate-linux-suite.git
+            cd ultimate-linux-suite
+            sudo ./ultimate.sh
+            ```
+
+            ### Changelog
+            See [CHANGELOG.md](https://github.com/Nerds489/ultimate-linux-suite/blob/main/CHANGELOG.md) for details.
+          files: release-packages/*
+          draft: false
+          prerelease: false

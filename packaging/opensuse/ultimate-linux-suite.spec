@@ -13,7 +13,7 @@
 #
 
 Name:           ultimate-linux-suite
-Version:        1.0.0
+Version:        2.2.0
 Release:        0
 Summary:        Comprehensive Linux system management toolkit
 License:        MIT

@@ -1,7 +1,7 @@
 # Maintainer: Nerds489 <nerds489@github.com>
 
 pkgname=ultimate-linux-suite
-pkgver=1.0.0
+pkgver=2.2.0
 pkgrel=1
 pkgdesc="Comprehensive Linux system management toolkit"
 arch=('any')
