@@ -71,7 +71,7 @@ _safe_set_cpu_governor() {
     # Verify governor is available
     local available
     available=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors 2>/dev/null)
-    if [[ ! " $available " =~ " $gov " ]]; then
+    if [[ " $available " != *" $gov "* ]]; then
         log_error "Governor '$gov' not available. Available: $available"
         return 1
     fi
@@ -145,7 +145,7 @@ get_zram_status() {
 
 get_thp_status() {
     if [[ -f /sys/kernel/mm/transparent_hugepage/enabled ]]; then
-        cat /sys/kernel/mm/transparent_hugepage/enabled | grep -oP '\[\K[^\]]+'
+        grep -oP '\[\K[^\]]+' /sys/kernel/mm/transparent_hugepage/enabled
     else
         echo "not available"
     fi
@@ -178,14 +178,14 @@ get_ipv6_status() {
 show_current_settings() {
     log_section "Current System Settings"
 
-    printf "${BOLD}Memory:${RESET}\n"
+    printf '%b%s%b\n' "${BOLD}" "Memory:" "${RESET}"
     printf "  Swappiness: %s\n" "$(get_current_swappiness)"
     printf "  VFS Cache Pressure: %s\n" "$(get_current_vfs_cache_pressure)"
     printf "  Dirty Ratio: %s\n" "$(get_current_dirty_ratio)"
     printf "  ZRAM: %s\n" "$(get_zram_status)"
     printf "  THP: %s\n" "$(get_thp_status)"
 
-    printf "\n${BOLD}I/O Scheduler:${RESET}\n"
+    printf '\n%b%s%b\n' "${BOLD}" "I/O Scheduler:" "${RESET}"
     local scheduler_found=0
     for disk in /sys/block/sd*/queue/scheduler /sys/block/nvme*/queue/scheduler; do
         [[ -f "$disk" ]] || continue
@@ -196,14 +196,14 @@ show_current_settings() {
     done
     [[ $scheduler_found -eq 0 ]] && printf "  (no disks found)\n"
 
-    printf "\n${BOLD}CPU Governor:${RESET}\n"
+    printf '\n%b%s%b\n' "${BOLD}" "CPU Governor:" "${RESET}"
     if [[ -d /sys/devices/system/cpu/cpu0/cpufreq ]]; then
         printf "  %s\n" "$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"
     else
         printf "  (not available)\n"
     fi
 
-    printf "\n${BOLD}Network:${RESET}\n"
+    printf '\n%b%s%b\n' "${BOLD}" "Network:" "${RESET}"
     printf "  TCP Congestion: %s\n" "$(get_bbr_status)"
     printf "  IPv6: %s\n" "$(get_ipv6_status)"
 

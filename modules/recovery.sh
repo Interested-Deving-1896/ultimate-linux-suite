@@ -210,7 +210,7 @@ reset_dns() {
     # Show current resolv.conf
     if [[ -f /etc/resolv.conf ]]; then
         printf "  /etc/resolv.conf:\n"
-        cat /etc/resolv.conf | sed 's/^/    /'
+        sed 's/^/    /' /etc/resolv.conf
         printf "\n"
     fi
 

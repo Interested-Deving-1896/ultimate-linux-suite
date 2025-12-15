@@ -4,6 +4,8 @@
 #
 # Note: set options inherited from suite.sh - do not set here
 
+# shellcheck disable=SC2034  # Variables exported for use by other modules
+
 # Prevent multiple sourcing
 [[ -n "${_HARDWARE_DETECT_LOADED:-}" ]] && return 0
 readonly _HARDWARE_DETECT_LOADED=1

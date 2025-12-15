@@ -159,7 +159,8 @@ uls_download_and_run() {
 # Usage: uls_backup FILE
 uls_backup() {
     local file="$1"
-    local suffix="uls-backup-$(date +%Y%m%d%H%M%S)"
+    local suffix
+    suffix="uls-backup-$(date +%Y%m%d%H%M%S)"
 
     if [[ ! -f "$file" ]]; then
         log_debug "No file to backup: $file"

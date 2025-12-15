@@ -165,7 +165,8 @@ apps_get_by_name() {
     return 1
 }
 
-# Parse app entry
+# Parse app entry - sets global APP_* variables for caller
+# shellcheck disable=SC2034  # Variables used by callers
 apps_parse_entry() {
     local entry="$1"
 

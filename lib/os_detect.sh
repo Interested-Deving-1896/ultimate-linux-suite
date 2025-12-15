@@ -3,6 +3,8 @@
 # os_detect.sh - Operating System Detection for Ultimate Linux Suite
 #
 
+# shellcheck disable=SC2034  # Variables exported for use by other modules
+
 # Prevent multiple sourcing
 [[ -n "${_OS_DETECT_LOADED:-}" ]] && return 0
 readonly _OS_DETECT_LOADED=1
