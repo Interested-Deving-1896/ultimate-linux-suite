@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BUILD_DIR="$PROJECT_ROOT/build/rpm"
 PKG_NAME="ultimate-linux-suite"
-VERSION="1.0.0"
+VERSION="$(cat "$PROJECT_ROOT/VERSION" 2>/dev/null || echo "2.3.0")"
 
 echo "==> Building .rpm package for $PKG_NAME $VERSION"
 

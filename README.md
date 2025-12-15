@@ -55,7 +55,7 @@ Download from [Releases](https://github.com/Nerds489/ultimate-linux-suite/releas
 
 | Distribution | Package | Install Command |
 |--------------|---------|-----------------|
-| Debian/Ubuntu/Mint/Kali/Parrot | `.deb` | `sudo dpkg -i ultimate-linux-suite_1.0.0-1_all.deb` |
+| Debian/Ubuntu/Mint/Kali/Parrot | `.deb` | `sudo dpkg -i ultimate-linux-suite_2.3.0-1_all.deb` |
 | Fedora/RHEL/CentOS | `.tar.gz` | Extract and run `sudo make install` |
 | Arch Linux | `.tar.gz` | Extract, `cd packaging/arch && makepkg -si` |
 | openSUSE | `.tar.gz` | Extract and run `sudo make install` |

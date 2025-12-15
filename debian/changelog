@@ -1,3 +1,10 @@
+ultimate-linux-suite (2.3.0-1) unstable; urgency=medium
+
+  * Fix unbound variable error in queue_execute() with set -u
+  * Build scripts now read version from VERSION file
+
+ -- Nerds489 <nerds489@github.com>  Sun, 15 Dec 2025 16:00:00 +0000
+
 ultimate-linux-suite (2.2.0-1) unstable; urgency=medium
 
   * Add GitHub Actions CI/CD for all package formats

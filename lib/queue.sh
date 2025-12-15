@@ -423,7 +423,7 @@ queue_move() {
 # Execute queue
 queue_execute() {
     local dry_run=0
-    [[ "$1" == "--dry-run" ]] && dry_run=1
+    [[ "${1:-}" == "--dry-run" ]] && dry_run=1
 
     if queue_is_empty; then
         log_info "Queue is empty, nothing to execute"
