@@ -8,7 +8,7 @@
 readonly _UTILS_LOADED=1
 
 # Suite version
-readonly SUITE_VERSION="1.1.0"
+readonly SUITE_VERSION="2.1.0"
 readonly SUITE_NAME="Ultimate Linux Suite"
 
 # ============================================================================
