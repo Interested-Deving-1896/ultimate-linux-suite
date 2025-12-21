@@ -5,6 +5,184 @@ All notable changes to Ultimate Linux Suite will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2024-XX-XX
+
+### Added
+
+#### First-Run Experience
+- **First-Run Wizard** (`modules/first_run.sh`) - Automated multi-phase setup wizard
+  - 11-phase execution flow with automatic progress tracking
+  - Handles reboots and resumes automatically
+  - Hardware scanning and optimization
+  - Package manager installation (Flatpak, Snap, Nix)
+  - Essential utility installation
+  - Status checking and reset capabilities
+
+#### Modern TUI System
+- **TUI Abstraction Layer** (`lib/tui.sh`) - Modern terminal UI with multiple backends
+  - Primary: gum (Charm.sh) for beautiful modern interfaces
+  - Fallback chain: fzf → whiptail → dialog → basic
+  - Menus, checklists, inputs, confirmations, spinners
+  - Terminal-aware responsive layouts
+  - Customizable color theming
+
+- **Advanced TUI Components** (`lib/tui_advanced.sh`)
+  - Complex wizard dialogs
+  - Multi-select with search
+  - Progress tracking UI
+  - State management for dialogs
+
+#### Cascade Installation System
+- **Cascade Installer** (`lib/pkg_cascade.sh`) - Try all installation methods automatically
+  - Automatic fallback: native → Flatpak → Snap → AppImage → source
+  - Transaction logging with rollback support
+  - Snapshot creation before major changes
+  - AppImage management with desktop integration
+  - Batch installation with detailed reporting
+  - Pre-defined application database with multi-method support
+
+#### Package Management Enhancements
+- **Universal Package Managers** (`lib/pkg_universal.sh`)
+  - Install/configure Flatpak with Flathub
+  - Install/configure Snap with classic support
+  - Install Nix Package Manager with flakes
+  - Install Homebrew/Linuxbrew
+  - AppImage support setup (AppImageLauncher/Gear Lever)
+  - AUR helper installation (paru/yay)
+
+- **AUR Support** (`lib/pkg_aur.sh`) - Complete Arch User Repository integration
+  - Detect and use installed AUR helpers
+  - Install AUR helpers from source
+  - Package search, install, update, remove
+  - PKGBUILD viewing and downloading
+  - Orphan package management
+  - Build configuration options
+
+- **Package Verification** (`lib/pkg_verify.sh`)
+  - Multi-method package verification (native, flatpak, snap, command)
+  - Dependency checking and auto-install
+  - Package manager health checks and repair
+  - **Package Checkpoints** - Snapshot and rollback package state
+  - Package diff and comparison tools
+  - Package file listing and integrity verification
+  - Package statistics
+
+- **Utility Matrix** (`lib/utilities.sh`) - Modern CLI tool installation
+  - Categorized utility definitions (download, compression, vcs, build, modern-cli, network, editors, shell, disk, monitoring, backup, media)
+  - Multi-distro package name mappings (apt, dnf, pacman, zypper)
+  - Cascade installation (native → cargo → pip → npm → go → binary)
+  - Preset bundles: essential, developer, sysadmin, modern-cli, rust-tools
+  - Installation history tracking
+
+#### Hardware Detection & Optimization
+- **Deep Hardware Scanning** (`lib/scan.sh`)
+  - CPU detection with feature flags (AES, AVX, AVX2, SSE4.2)
+  - CPU frequency and governor information
+  - GPU vendor and model detection
+  - RAM analysis with memory-based recommendations
+  - Disk type detection (NVMe, SSD, HDD, VM)
+  - Network interface enumeration
+  - WiFi chipset identification with driver detection
+  - Battery status and capacity
+  - Chassis/form factor detection
+  - JSON output for programmatic use
+
+- **System Tuning Engine** (`lib/tune.sh`)
+  - Automatic sysctl configuration generation
+  - Hardware-aware parameter selection
+  - Multiple profiles: minimal, balanced, performance, gaming, server
+  - Memory, network, filesystem, and security tuning
+  - Automatic backup before changes
+  - Safe rollback capability
+  - Parameter validation with timeout
+
+- **ZRAM Configuration** (`lib/zram.sh`)
+  - Automatic ZRAM size calculation based on RAM
+  - Compression algorithm selection (zstd, lz4, lzo-rle, lzo)
+  - systemd-zram-generator integration
+  - Manual configuration fallback
+  - ZRAM status and statistics
+
+- **CPU Governor Management** (`lib/cpu_governor.sh`)
+  - Intel P-State and AMD P-State support
+  - Governor detection and configuration
+  - Energy Performance Preference (EPP) support
+  - Boost control
+  - Persistence via systemd/TLP/cpufrequtils
+
+- **I/O Scheduler Optimization** (`lib/io_scheduler.sh`)
+  - Device type detection (NVMe, SSD, HDD, VM)
+  - Optimal scheduler selection per device type
+  - udev rules for persistence
+  - Scheduler availability detection
+
+#### State Management
+- **State System** (`lib/state.sh`)
+  - JSON-based state storage with jq
+  - Atomic file operations with fsync
+  - Process-safe locking with stale lock detection
+  - Event history recording
+  - Boot ID tracking for reboot detection
+
+- **Advanced State** (`lib/state_advanced.sh`)
+  - Checkpoint system for state snapshots
+  - Phase transition management
+  - Cross-reboot persistence
+
+- **Autostart System** (`lib/autostart.sh`)
+  - Systemd user service support
+  - XDG autostart fallback
+  - Boot ID tracking
+  - Multi-phase resume capability
+  - Linger support for background services
+  - Resume script generation
+
+#### Testing Framework
+- **Test Framework** (`tests/framework.sh`)
+  - 20+ assertion functions (equals, contains, matches, file_exists, command_exists, etc.)
+  - Test discovery and execution
+  - Setup/teardown hooks (per-test and per-suite)
+  - Command mocking with restore
+  - Test suite runner for directories
+  - Verbose and quiet modes
+  - Colored output with pass/fail/skip indicators
+
+#### Error Handling
+- **Error Handling** (`lib/error_handling.sh`)
+  - Robust trap handlers for ERR signal
+  - Error stack tracking
+  - Critical section support
+  - Automatic recovery attempts
+  - Cleanup handlers
+  - JSON error logging
+
+### Changed
+
+- **All modules now have fallback dependencies** - Modules can be sourced standalone without crashing
+- **PKG_MANAGER auto-detection** - No longer requires os_detect.sh to be pre-loaded
+- **Logging functions always available** - Fallback functions prevent undefined function errors
+- **Improved cross-module compatibility** - Consistent dependency loading pattern across all modules
+- **Graceful degradation** - Features work with reduced functionality when dependencies are missing
+
+### Fixed
+
+- Fixed `exit 1` on dependency failures - now uses graceful fallbacks
+- Fixed undefined variable errors when modules sourced standalone
+- Fixed logging function availability in all modules
+- Fixed PKG_MANAGER detection when os_detect.sh not loaded
+- Fixed hardware_detect.sh log_debug calls without logging.sh
+
+### Documentation
+
+- Completely rewritten README.md with v3.0 features
+- Added comprehensive usage examples for all new modules
+- Added module reference tables
+- Added testing documentation
+- Added development guidelines with dependency pattern
+- Added CHANGELOG entries for all new features
+
+---
+
 ## [2.3.0] - 2025-12-15
 
 ### Fixed
@@ -74,104 +252,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Core Features
 - **Queue System** - All operations are staged for review before execution
-  - Package installations queued with descriptions
-  - System commands queued with previews
-  - Execute all, clear, or remove individual items
 - **OS Detection** - Comprehensive system identification
-  - Distribution and version detection
-  - Package manager detection (apt, dnf, pacman, zypper)
-  - Init system detection (systemd, openrc, sysvinit, runit)
-  - Desktop environment detection (GNOME, KDE, XFCE, etc.)
-  - Session type detection (Wayland, X11, TTY)
 - **Hardware Detection** - Complete hardware profiling
-  - CPU vendor, model, cores, and feature flags
-  - GPU vendor and model (NVIDIA, AMD, Intel)
-  - WiFi chipset detection (Intel, Broadcom, Realtek, Atheros)
-  - Battery status for laptops
-  - Form factor detection (desktop, laptop, VM)
 
 #### Application Installer
 - 60+ applications with cross-distro package mapping
 - Categories: Browsers, Development, Gaming, Media, Communication, Productivity, Utilities, Security
 - Preset profiles: Workstation, Gaming, Developer, Pentest, Server, Minimal
 - Flatpak integration with Flathub search
-- Package format: `APP|CATEGORY|DESC|APT|DNF|PACMAN|ZYPPER|FLATPAK|CHECK_CMD`
 
 #### System Optimization
-- **Memory**: Swappiness, VFS cache pressure, ZRAM, Transparent Huge Pages
-- **I/O**: Scheduler selection (mq-deadline, bfq, kyber, none)
-- **Network**: BBR congestion control, TCP buffer tuning, IPv6 toggle, DNS caching
-- **Power**: CPU governor, laptop mode
-- **Desktop**: Compositor tweaks, animation settings
+- Memory, I/O, Network, Power, and Desktop optimization
 - Quick profiles: Desktop, Gaming, Laptop, Server
 
 #### Driver Management
-- NVIDIA proprietary driver installation
-- AMD mesa/Vulkan drivers
-- Intel media drivers
-- Broadcom WiFi (broadcom-sta, b43)
-- Realtek WiFi guidance
-- VirtualBox Guest Additions
-- VMware Tools (open-vm-tools)
-- QEMU Guest Agent
-- DKMS support and module rebuild
+- NVIDIA, AMD, Intel drivers
+- Broadcom and Realtek WiFi
+- VM guest tools (VirtualBox, VMware, QEMU)
 
 #### Recovery Tools
-- Fix broken packages (dpkg --configure, apt -f install, etc.)
-- Clean package cache
-- Remove orphan packages
-- Clear temporary files (/tmp, /var/tmp, ~/.cache)
-- Rebuild initramfs
-- Update GRUB bootloader
-- Reset network (NetworkManager, systemd-networkd)
-- Reset DNS (Cloudflare, Google, Quad9, DHCP restore)
-- Check disk health (SMART)
-- Schedule filesystem check
-- View journal errors
-- Backup installed package list
+- Fix broken packages
+- Clean caches
+- Reset network and DNS
+- Disk health checking
 
 #### Distribution Packages
-- `.deb` for Debian, Ubuntu, Linux Mint, Kali, Parrot OS
-- `.rpm` for Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux
-- `.rpm` for openSUSE Leap/Tumbleweed
-- `.pkg.tar.zst` for Arch Linux (+ AUR -git version)
-- Makefile with install/uninstall/test targets
-- Build scripts for all formats
+- `.deb` for Debian family
+- `.rpm` for Fedora and openSUSE
+- `.pkg.tar.zst` for Arch Linux
 
 ### Supported Distributions
-- **Debian Family**: Debian, Ubuntu, Linux Mint, Pop!_OS, elementary OS, Zorin OS
-- **Fedora Family**: Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux
-- **Arch Family**: Arch Linux, Manjaro, EndeavourOS, Garuda, Artix
-- **openSUSE Family**: openSUSE Leap, openSUSE Tumbleweed, SLES
-- **Security**: Kali Linux, Parrot OS
-- **Generic**: Fallback for unknown distributions
+- Debian, Ubuntu, Linux Mint, Pop!_OS, elementary OS, Zorin OS
+- Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux
+- Arch Linux, Manjaro, EndeavourOS, Garuda, Artix
+- openSUSE Leap, openSUSE Tumbleweed, SLES
+- Kali Linux, Parrot OS
 
-### Technical Details
-- Pure Bash implementation (requires Bash 4.0+)
-- Modular architecture: lib/, modules/, menus/, backends/, apps/
-- Source guards prevent multiple inclusion
-- Safe error handling (no aggressive `set -e`)
-- File logging to /var/log/ultimate-linux-suite/ or ~/.ultimate-linux-suite/logs/
-- Non-interactive mode for CI/testing
+---
 
-### Usage
+## Upgrade Guide
+
+### From v2.x to v3.0
+
+1. **Pull the latest version:**
+   ```bash
+   cd ultimate-linux-suite
+   git pull origin main
+   ```
+
+2. **Run the first-run wizard (optional but recommended):**
+   ```bash
+   ./modules/first_run.sh
+   ```
+
+3. **Or continue using the main script:**
+   ```bash
+   sudo ./ultimate.sh
+   ```
+
+### New Optional Dependencies
+
+For the best experience, install these optional tools:
+
 ```bash
-# Clone and run
-git clone https://github.com/Nerds489/ultimate-linux-suite.git
-cd ultimate-linux-suite
-sudo ./ultimate.sh
+# Modern TUI (highly recommended)
+go install github.com/charmbracelet/gum@latest
+# or: brew install gum
 
-# Or install system-wide
-sudo make install
-ultimate-linux-suite
+# Fuzzy finder (good fallback)
+sudo apt install fzf  # Debian/Ubuntu
+sudo dnf install fzf  # Fedora
+sudo pacman -S fzf    # Arch
+
+# JSON processing (for state management)
+sudo apt install jq   # Debian/Ubuntu
+sudo dnf install jq   # Fedora
+sudo pacman -S jq     # Arch
 ```
 
-## [Unreleased]
+### Breaking Changes
 
-### Planned
-- System backup and restore
-- Firewall management (ufw, firewalld)
-- Service management module
-- Theme and appearance settings
-- Snap integration
-- AUR helper installation (yay/paru)
+None. All v2.x functionality is preserved.

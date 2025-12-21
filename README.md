@@ -9,6 +9,17 @@ A comprehensive, multi-distribution Linux system management toolkit. One script 
 
 **[Download Latest Release](https://github.com/Nerds489/ultimate-linux-suite/releases/latest)**
 
+## What's New in v3.0
+
+- **First-Run Wizard** - Automated setup with multi-phase execution and reboot handling
+- **Modern TUI** - Beautiful interface using gum/fzf with fallback to whiptail/dialog
+- **Cascade Installation** - Try native → Flatpak → Snap → AppImage automatically
+- **Smart Hardware Detection** - Deep system profiling with JSON output
+- **System Tuning Engine** - Auto-optimized sysctl based on your hardware
+- **Package Checkpoints** - Snapshot and rollback your package state
+- **Utility Matrix** - Install modern CLI tools (ripgrep, bat, eza, etc.) easily
+- **Testing Framework** - Built-in test suite for reliability
+
 ## Quick Start
 
 ```bash
@@ -19,16 +30,51 @@ sudo ./ultimate.sh
 
 **That's it.** Clone and run - no build steps, no packages required.
 
+### First-Run Experience
+
+New installations can use the automated first-run wizard:
+
+```bash
+./modules/first_run.sh
+```
+
+This wizard will:
+1. Scan your hardware
+2. Apply system optimizations
+3. Install package managers (Flatpak, Snap, Nix)
+4. Install essential utilities
+5. Handle reboots and resume automatically
+
 ## Key Features
 
+### Core Features
 - **Queue-Based Operations** - Review all changes before execution
-- **Multi-Distro Support** - Works on Debian, Ubuntu, Fedora, Arch, openSUSE, Alpine, Void, and more
+- **Multi-Distro Support** - Works on 20+ distributions
 - **60+ Applications** - Curated app database with cross-distro package mapping
-- **System Optimization** - ZRAM, swappiness, I/O schedulers, kernel tuning
+- **Cascade Installation** - Automatically tries multiple install methods
+
+### System Management
+- **System Optimization** - ZRAM, swappiness, I/O schedulers, CPU governors
 - **Driver Management** - NVIDIA, AMD, Intel, Broadcom WiFi, VM guest tools
 - **Service Management** - Start, stop, enable, disable services (systemd/OpenRC)
 - **Firewall Management** - Unified interface for ufw, firewalld, and iptables
+
+### Recovery & Maintenance
+- **Package Checkpoints** - Save and restore package state
 - **Recovery Tools** - DNS reset, orphan cleanup, package repair, bootloader fix
+- **Health Checks** - Verify package manager and system health
+
+### Modern CLI Tools
+Install modern replacements for classic Unix tools:
+
+| Classic | Modern | Description |
+|---------|--------|-------------|
+| `find` | `fd` | User-friendly find alternative |
+| `grep` | `ripgrep` | Blazingly fast search |
+| `cat` | `bat` | Cat with syntax highlighting |
+| `ls` | `eza` | Modern ls with git integration |
+| `top` | `btop` | Beautiful resource monitor |
+| `du` | `dust` | Intuitive disk usage |
 
 ## Installation
 
@@ -55,83 +101,400 @@ Download from [Releases](https://github.com/Nerds489/ultimate-linux-suite/releas
 
 | Distribution | Package | Install Command |
 |--------------|---------|-----------------|
-| Debian/Ubuntu/Mint/Kali/Parrot | `.deb` | `sudo dpkg -i ultimate-linux-suite_2.3.0-1_all.deb` |
+| Debian/Ubuntu/Mint | `.deb` | `sudo dpkg -i ultimate-linux-suite_*.deb` |
 | Fedora/RHEL/CentOS | `.tar.gz` | Extract and run `sudo make install` |
 | Arch Linux | `.tar.gz` | Extract, `cd packaging/arch && makepkg -si` |
 | openSUSE | `.tar.gz` | Extract and run `sudo make install` |
 
-Build packages from source:
-```bash
-make deb        # Debian/Ubuntu/Mint/Kali/Parrot
-make rpm        # Fedora/RHEL/CentOS
-make arch       # Arch Linux
-make opensuse   # openSUSE
-make all-pkgs   # All formats
-```
+## Module Reference
 
-## Modules
+### Core Libraries (`lib/`)
 
 | Module | Description |
 |--------|-------------|
-| **Applications** | Browse 60+ apps by category, search, or use preset profiles |
-| **Drivers** | GPU drivers, WiFi firmware, VirtualBox/VMware guest tools |
-| **Optimization** | System tuning with profiles (Desktop, Gaming, Laptop, Server) |
-| **Recovery** | Fix packages, reset DNS, clean orphans, repair bootloader |
-| **Services** | Manage system services with systemd or OpenRC support |
-| **Firewall** | Configure firewall rules (ufw/firewalld/iptables) with presets |
-| **Profiles** | Quick setup profiles for different use cases |
-| **Queue** | Review and execute all pending operations |
+| `logging.sh` | Multi-level logging with file output and colors |
+| `os_detect.sh` | OS/distro detection with family grouping |
+| `hardware_detect.sh` | CPU, GPU, RAM, disk, WiFi, battery detection |
+| `pkg.sh` | Package manager abstraction (apt/dnf/pacman/zypper/apk/xbps) |
+| `queue.sh` | Queue system for batched operations |
+| `menu.sh` | Interactive menu rendering |
 
-## Queue System
+### Advanced Libraries (`lib/`)
 
-Nothing executes immediately. All operations are queued for review:
+| Module | Description |
+|--------|-------------|
+| `tui.sh` | Modern TUI with gum/fzf/whiptail backends |
+| `tui_advanced.sh` | Complex UI components (wizards, multi-select) |
+| `scan.sh` | Deep hardware scanning with JSON output |
+| `tune.sh` | Sysctl configuration generator |
+| `state.sh` | JSON-based state management with locking |
+| `error_handling.sh` | Robust error handling and recovery |
+
+### Package Management (`lib/`)
+
+| Module | Description |
+|--------|-------------|
+| `pkg_cascade.sh` | Cascade installation (native→flatpak→snap→appimage) |
+| `pkg_universal.sh` | Install Flatpak, Snap, Nix, Homebrew, AUR helpers |
+| `pkg_aur.sh` | Complete AUR support for Arch-based systems |
+| `pkg_verify.sh` | Package verification, health checks, checkpoints |
+| `utilities.sh` | Utility installation matrix (modern CLI tools) |
+
+### System Optimization (`lib/`)
+
+| Module | Description |
+|--------|-------------|
+| `zram.sh` | ZRAM compressed swap configuration |
+| `cpu_governor.sh` | CPU frequency scaling management |
+| `io_scheduler.sh` | I/O scheduler optimization |
+| `autostart.sh` | Autostart and multi-phase resume system |
+
+### Feature Modules (`modules/`)
+
+| Module | Description |
+|--------|-------------|
+| `apps.sh` | Application installer with categories |
+| `drivers.sh` | GPU, WiFi, and VM guest driver management |
+| `optimize.sh` | System optimization with profiles |
+| `recovery.sh` | System recovery and repair tools |
+| `services.sh` | Service management (systemd/OpenRC) |
+| `firewall.sh` | Firewall management (ufw/firewalld/iptables) |
+| `setup_profiles.sh` | Quick setup profiles |
+| `first_run.sh` | First-run wizard with multi-phase execution |
+
+## Cascade Installation System
+
+When you install an app, the cascade system tries multiple methods:
 
 ```
-┌─────────────────────────────────────────┐
-│         Installation Queue              │
-├─────────────────────────────────────────┤
-│  1. [pkg] firefox - Install Firefox     │
-│  2. [pkg] vlc - Install VLC             │
-│  3. [cmd] Configure ZRAM                │
-├─────────────────────────────────────────┤
-│  e) Execute All    c) Clear    0) Back  │
-└─────────────────────────────────────────┘
+1. Native package (apt/dnf/pacman/etc.)
+   ↓ if not available
+2. Flatpak from Flathub
+   ↓ if not available
+3. Snap from Snapcraft
+   ↓ if not available
+4. AppImage download
+   ↓ if not available
+5. Build from source
 ```
+
+### Usage
+
+```bash
+# Source the module
+source lib/pkg_cascade.sh
+
+# Install with automatic method selection
+cascade_install firefox
+
+# Install with specific method preference
+cascade_install_with_method discord flatpak
+
+# Batch install
+cascade_batch_install firefox vlc gimp
+```
+
+## Package Checkpoints
+
+Save your package state and roll back if needed:
+
+```bash
+source lib/pkg_verify.sh
+
+# Create a checkpoint before making changes
+pkg_checkpoint_create "before-gaming-setup"
+
+# List available checkpoints
+pkg_checkpoint_list
+
+# See what changed since checkpoint
+pkg_checkpoint_diff "before-gaming-setup"
+
+# Roll back to checkpoint (dry run)
+pkg_checkpoint_rollback "before-gaming-setup"
+
+# Roll back for real
+pkg_checkpoint_rollback "before-gaming-setup" 0
+```
+
+## Utility Installation
+
+Install modern CLI tools by category:
+
+```bash
+source lib/utilities.sh
+
+# Install essential utilities
+util_install_essentials
+
+# Install developer tools
+util_install_developer
+
+# Install sysadmin tools
+util_install_sysadmin
+
+# Install modern CLI replacements
+util_install_modern_cli
+
+# Install Rust-based tools (auto-installs Rust if needed)
+util_install_rust_tools
+
+# Install specific utility
+util_install ripgrep
+
+# Check what's installed
+util_status
+```
+
+### Available Categories
+
+| Category | Tools |
+|----------|-------|
+| `essential` | curl, wget, git, vim, htop, tree, fzf, jq, rsync, tmux |
+| `modern-cli` | htop, btop, ncdu, fd, ripgrep, bat, eza, fzf, jq, yq, tldr |
+| `developer` | git, vim, neovim, make, cmake, jq, fd, ripgrep, bat, fzf, tmux |
+| `sysadmin` | htop, iotop, lsof, strace, nmap, tcpdump, rsync, tmux |
+| `rust-tools` | fd, ripgrep, bat, eza, dust, procs, bottom, zoxide, starship, delta |
+| `network` | nmap, netcat, socat, tcpdump, mtr, iperf3, httpie |
+| `compression` | tar, gzip, bzip2, xz, zip, 7z, zstd, pigz |
+
+## Hardware Scanning
+
+Deep hardware detection with JSON output:
+
+```bash
+source lib/scan.sh
+
+# Get CPU info as JSON
+detect_cpu
+
+# Get full hardware scan
+perform_full_scan
+
+# Output saved to: ~/.local/state/ultimate-suite/hardware_scan.json
+```
+
+## System Tuning
+
+Generate optimized sysctl configuration:
+
+```bash
+source lib/tune.sh
+
+# Generate configuration for your hardware
+tune_generate_sysctl balanced
+
+# Available profiles: minimal, balanced, performance, gaming, server
+
+# Apply the configuration
+tune_apply
+
+# Restore from backup
+tune_restore
+```
+
+## TUI System
+
+The suite uses a modern TUI with automatic backend selection:
+
+**Priority:** gum → fzf → whiptail → dialog → basic
+
+```bash
+source lib/tui.sh
+
+# Show a menu
+tui_menu "Choose an option" "Option 1" "Option 2" "Option 3"
+
+# Show a checklist
+tui_checklist "Select items" "Item 1" "Item 2" "Item 3"
+
+# Get user input
+result=$(tui_input "Enter your name")
+
+# Show confirmation
+tui_confirm "Are you sure?" && echo "Yes" || echo "No"
+
+# Show a spinner while working
+long_running_command &
+tui_spinner $! "Processing..."
+```
+
+## State Management
+
+Track state across sessions and reboots:
+
+```bash
+source lib/state.sh
+
+# Initialize state system
+init_state_system
+
+# Update state
+update_state '.phase.current = 2 | .phase.name = "OPTIMIZE"'
+
+# Query state
+current_phase=$(get_state '.phase.name')
+
+# Record events
+record_event "package_installed" '{"name": "firefox", "method": "native"}'
+```
+
+## First-Run Wizard
+
+The first-run wizard provides an automated setup experience:
+
+```bash
+# Run the wizard
+./modules/first_run.sh
+
+# Check status
+./modules/first_run.sh --status
+
+# Reset and start over
+./modules/first_run.sh --reset
+
+# Resume from specific phase
+./modules/first_run.sh --resume SCAN
+```
+
+### Phases
+
+| Phase | Description |
+|-------|-------------|
+| INIT | Check prerequisites and display welcome |
+| SCAN | Hardware and system detection |
+| OPTIMIZE | Apply system optimizations |
+| REBOOT_REQUIRED | Prompt for reboot (auto-resume after) |
+| VERIFY | Post-reboot verification |
+| PKG_MANAGERS | Install Flatpak, Snap, Nix |
+| UTILITIES | Install essential utilities |
+| REBOOT_OPTIONAL | Offer optional reboot |
+| VERIFY_FINAL | Final system verification |
+| APPS_READY | Ready for application installation |
+| COMPLETE | First-run complete |
 
 ## Supported Distributions
 
 | Family | Distributions |
 |--------|---------------|
-| **Debian** | Debian, Ubuntu, Linux Mint, Pop!_OS, elementary OS, Zorin OS |
-| **Fedora** | Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux |
-| **Arch** | Arch Linux, Manjaro, EndeavourOS, Garuda, Artix |
+| **Debian** | Debian, Ubuntu, Linux Mint, Pop!_OS, elementary OS, Zorin OS, MX Linux |
+| **Fedora** | Fedora, RHEL, CentOS, Rocky Linux, AlmaLinux, Oracle Linux |
+| **Arch** | Arch Linux, Manjaro, EndeavourOS, Garuda, Artix, ArcoLinux, CachyOS |
 | **openSUSE** | openSUSE Leap, openSUSE Tumbleweed, SLES |
 | **Alpine** | Alpine Linux |
 | **Void** | Void Linux |
+| **Immutable** | Fedora Silverblue/Kinoite, Universal Blue (Bazzite, Bluefin) |
 | **Security** | Kali Linux, Parrot OS |
 
 Unknown distributions fall back to generic mode with basic functionality.
 
-## Application Presets
+## Project Structure
 
-| Preset | Contents |
-|--------|----------|
-| `workstation` | LibreOffice, Firefox, Thunderbird, GIMP, VLC |
-| `gaming` | Steam, Lutris, Wine, MangoHud, ProtonUp-Qt |
-| `developer` | Git, Docker, VS Code, Node.js, Python, Go, Rust |
-| `pentest` | Nmap, Wireshark, Metasploit, Burp Suite |
-| `server` | htop, tmux, ncdu, fail2ban, nginx |
-| `minimal` | Essential CLI utilities only |
+```
+ultimate-linux-suite/
+├── ultimate.sh              # Main entry point
+├── Makefile                 # Build & install targets
+├── IMPLEMENTATION_PLAN.md   # Development roadmap
+│
+├── lib/                     # Core libraries
+│   ├── logging.sh           # Multi-level logging with file output
+│   ├── os_detect.sh         # OS/distro detection
+│   ├── hardware_detect.sh   # Hardware detection
+│   ├── pkg.sh               # Package manager abstraction
+│   ├── queue.sh             # Queue system
+│   ├── menu.sh              # Interactive menus
+│   ├── utils.sh             # Utility functions
+│   ├── error_handling.sh    # Error handling and recovery
+│   │
+│   ├── tui.sh               # Modern TUI (gum/fzf/whiptail)
+│   ├── tui_advanced.sh      # Advanced UI components
+│   │
+│   ├── scan.sh              # Deep hardware scanning
+│   ├── tune.sh              # Sysctl configuration generator
+│   ├── state.sh             # State management
+│   ├── state_advanced.sh    # Advanced state features
+│   │
+│   ├── pkg_cascade.sh       # Cascade installation system
+│   ├── pkg_universal.sh     # Universal package managers
+│   ├── pkg_aur.sh           # AUR support for Arch
+│   ├── pkg_verify.sh        # Package verification & checkpoints
+│   ├── utilities.sh         # Utility installation matrix
+│   │
+│   ├── zram.sh              # ZRAM configuration
+│   ├── cpu_governor.sh      # CPU governor management
+│   ├── io_scheduler.sh      # I/O scheduler optimization
+│   └── autostart.sh         # Autostart management
+│
+├── modules/                 # Feature modules
+│   ├── apps.sh              # Application installer
+│   ├── drivers.sh           # Driver management
+│   ├── optimize.sh          # System optimization
+│   ├── recovery.sh          # Recovery tools
+│   ├── services.sh          # Service management
+│   ├── firewall.sh          # Firewall management
+│   ├── setup_profiles.sh    # Quick setup profiles
+│   └── first_run.sh         # First-run wizard
+│
+├── tests/                   # Testing framework
+│   ├── framework.sh         # Test framework
+│   └── test_*.sh            # Test files
+│
+├── apps/                    # Application database
+│   └── database.sh          # 60+ app definitions
+│
+├── backends/                # Distro-specific mappings
+│   ├── debian.sh, ubuntu.sh, mint.sh
+│   ├── fedora.sh, arch.sh, opensuse.sh
+│   └── kali.sh, parrot.sh, generic.sh
+│
+├── configs/                 # Configuration files
+│   ├── optimization_profiles.conf
+│   └── app_presets/
+│
+├── docs/                    # Documentation
+│   └── *.md
+│
+└── packaging/               # Distribution packages
+    ├── debian/
+    ├── rpm/
+    ├── opensuse/
+    ├── arch/
+    └── scripts/
+```
 
-## Optimization Options
+## Testing
 
-| Category | Options |
-|----------|---------|
-| **Memory** | Swappiness, ZRAM, cache pressure, THP |
-| **I/O** | Scheduler selection, readahead tuning |
-| **Network** | BBR congestion control, TCP buffers, IPv6 toggle |
-| **Power** | CPU governor, laptop mode, USB autosuspend |
-| **Desktop** | Compositor tweaks, animation speed |
+Run the test suite:
+
+```bash
+# Run all tests
+./tests/framework.sh
+
+# Run specific test file
+source tests/framework.sh
+run_tests tests/test_logging.sh
+
+# Run test suite
+run_test_suite tests/
+```
+
+### Writing Tests
+
+```bash
+#!/usr/bin/env bash
+source tests/framework.sh
+
+TEST_SUITE_NAME="My Tests"
+
+test_example() {
+    assert_equals "expected" "actual" "Values should match"
+    assert_true "1" "Should be truthy"
+    assert_file_exists "/etc/passwd" "File should exist"
+    assert_command_exists "bash" "Bash should be available"
+}
+
+run_tests
+```
 
 ## Command Line Options
 
@@ -150,49 +513,15 @@ sudo ./ultimate.sh --debug      # Enable debug output
 - Root/sudo access for system modifications
 
 **Recommended:**
+- `jq` - JSON processing (for state management)
 - `pciutils` - GPU/hardware detection
 - `usbutils` - USB device detection
 - `dmidecode` - System information
 - `smartmontools` - Disk health monitoring
 
-## Project Structure
-
-```
-ultimate-linux-suite/
-├── ultimate.sh           # Main entry point
-├── Makefile              # Build & install targets
-├── lib/                  # Core libraries
-│   ├── logging.sh        # Logging with file output
-│   ├── utils.sh          # Utility functions
-│   ├── os_detect.sh      # OS/distro detection
-│   ├── hardware_detect.sh # Hardware detection
-│   ├── pkg.sh            # Package manager abstraction
-│   ├── queue.sh          # Queue system
-│   └── menu.sh           # Interactive menus
-├── modules/              # Feature modules
-│   ├── apps.sh           # Application installer
-│   ├── optimize.sh       # System optimization
-│   ├── drivers.sh        # Driver management
-│   ├── recovery.sh       # Recovery tools
-│   ├── services.sh       # Service management (systemd/OpenRC)
-│   ├── firewall.sh       # Firewall management (ufw/firewalld)
-│   └── setup_profiles.sh # Quick setup profiles
-├── apps/                 # Application database
-│   └── database.sh       # 60+ app definitions
-├── backends/             # Distro-specific mappings
-│   ├── debian.sh, ubuntu.sh, mint.sh
-│   ├── fedora.sh, arch.sh, opensuse.sh
-│   └── kali.sh, parrot.sh, generic.sh
-├── configs/              # Configuration files
-│   ├── optimization_profiles.conf
-│   └── app_presets/      # Preset definitions
-└── packaging/            # Distribution packages
-    ├── debian/           # .deb packaging
-    ├── rpm/              # Fedora .rpm
-    ├── opensuse/         # openSUSE .rpm
-    ├── arch/             # PKGBUILD
-    └── scripts/          # Build scripts
-```
+**Optional (for enhanced TUI):**
+- `gum` - Modern TUI toolkit (best experience)
+- `fzf` - Fuzzy finder (good fallback)
 
 ## Development
 
@@ -200,33 +529,44 @@ ultimate-linux-suite/
 ```bash
 make test
 # or
-./scripts/dev-check.sh
+bash -n lib/*.sh modules/*.sh
+```
+
+### Run Tests
+```bash
+source tests/framework.sh
+run_test_suite tests/
 ```
 
 ### Adding a Module
-1. Create `modules/mymodule.sh` with `mymodule_init()` and `mymodule_main()`
-2. Source it in `ultimate.sh`
-3. Add menu entry in `menus/main_menu.sh`
-
-### Adding Distro Support
-1. Create `backends/distroname.sh`
-2. Define `backend_pkg_name()` for package mappings
-3. Add detection in `lib/os_detect.sh`
+1. Create `lib/mymodule.sh` with proper guards and dependencies
+2. Follow the dependency pattern:
+```bash
+# Source logging with fallback
+if ! declare -f log_info &>/dev/null; then
+    source "${SCRIPT_DIR}/logging.sh" 2>/dev/null || {
+        log_info() { echo "[INFO] $*"; }
+        # ... fallbacks
+    }
+fi
+```
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Test on at least one supported distribution
-4. Run `make test` to verify syntax
-5. Submit a pull request
+4. Run syntax checks: `bash -n lib/*.sh modules/*.sh`
+5. Run tests: `source tests/framework.sh && run_test_suite tests/`
+6. Submit a pull request
 
 ## Known Limitations
 
 - Some pentest tools require Kali/Parrot repositories
 - NVIDIA drivers may need additional repo setup on some distros
-- AUR packages require yay/paru (not installed by default)
+- AUR packages require yay/paru (can be auto-installed)
 - Some kernel changes require reboot
+- Immutable distros have limited native package support (use Flatpak)
 
 ## License
 
@@ -236,3 +576,4 @@ MIT License - see [LICENSE](LICENSE) file.
 
 - **Repository:** https://github.com/Nerds489/ultimate-linux-suite
 - **Issues:** https://github.com/Nerds489/ultimate-linux-suite/issues
+- **Releases:** https://github.com/Nerds489/ultimate-linux-suite/releases
