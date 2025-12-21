@@ -1,6 +1,7 @@
 # Ultimate Linux Suite
 
 [![Release](https://img.shields.io/github/v/release/Nerds489/ultimate-linux-suite)](https://github.com/Nerds489/ultimate-linux-suite/releases/latest)
+[![CI](https://github.com/Nerds489/ultimate-linux-suite/actions/workflows/test.yml/badge.svg)](https://github.com/Nerds489/ultimate-linux-suite/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/Bash-4.0%2B-green.svg)](https://www.gnu.org/software/bash/)
 [![Platform](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://kernel.org)
@@ -11,14 +12,23 @@ A comprehensive, multi-distribution Linux system management toolkit. One script 
 
 ## What's New in v3.0
 
+### Core Improvements
 - **First-Run Wizard** - Automated setup with multi-phase execution and reboot handling
-- **Modern TUI** - Beautiful interface using gum/fzf with fallback to whiptail/dialog
+- **Modern TUI** - Beautiful Dracula-themed interface using gum/fzf with fallback to whiptail/dialog
 - **Cascade Installation** - Try native → Flatpak → Snap → AppImage automatically
-- **Smart Hardware Detection** - Deep system profiling with JSON output
+- **Smart Hardware Detection** - Deep system profiling with JSON output and optimization recommendations
+
+### System Optimization
 - **System Tuning Engine** - Auto-optimized sysctl based on your hardware
+- **Blueprint Algorithms** - Scientific parameter selection (ZRAM sizing, swappiness, I/O schedulers)
+- **Multi-Stage Installation** - System-level systemd service for installations that survive reboots
+
+### Developer Experience
 - **Package Checkpoints** - Snapshot and rollback your package state
 - **Utility Matrix** - Install modern CLI tools (ripgrep, bat, eza, etc.) easily
-- **Testing Framework** - Built-in test suite for reliability
+- **Profile Aliases** - Automatic shell aliases for modern CLI tools in `/etc/profile.d/`
+- **Testing Framework** - Built-in test suite with GitHub Actions CI
+- **Navigation System** - Hierarchical menus with breadcrumb navigation
 
 ## Quick Start
 
@@ -148,6 +158,8 @@ Download from [Releases](https://github.com/Nerds489/ultimate-linux-suite/releas
 | `cpu_governor.sh` | CPU frequency scaling management |
 | `io_scheduler.sh` | I/O scheduler optimization |
 | `autostart.sh` | Autostart and multi-phase resume system |
+| `systemd_service.sh` | System-level systemd service for multi-stage install |
+| `profile_aliases.sh` | Modern CLI tool alias management |
 
 ### Feature Modules (`modules/`)
 
@@ -272,7 +284,86 @@ detect_cpu
 perform_full_scan
 
 # Output saved to: ~/.local/state/ultimate-suite/hardware_scan.json
+
+# Save hardware profile with optimization recommendations
+save_hardware_profile
+
+# Print optimization recommendations
+print_optimization_recommendations
 ```
+
+## Optimization Algorithms
+
+The suite uses research-backed algorithms for automatic optimization:
+
+| Parameter | Algorithm | Rationale |
+|-----------|-----------|-----------|
+| **ZRAM Size** | `min(RAM/2, 8GB)` | Conservative sizing prevents over-commitment |
+| **Swappiness** | RAM < 8GB: 60; 8-16GB: 40; 32GB+: 10-20 | Balances RAM utilization with swap overhead |
+| **Swappiness (ZRAM)** | 100-180 based on RAM | Higher values since ZRAM is faster than disk |
+| **I/O Scheduler** | NVMe → `none`, SSD → `mq-deadline`, HDD → `bfq` | Matches scheduler complexity to device needs |
+| **CPU Governor** | Desktop: `performance`, Laptop: `schedutil` | Optimizes for use case expectations |
+
+```bash
+source lib/scan.sh
+
+# Generate recommendations based on your hardware
+generate_optimization_recommendations
+```
+
+## Profile Aliases
+
+Install modern CLI tool aliases system-wide or per-user:
+
+```bash
+source lib/profile_aliases.sh
+
+# Install aliases (auto-detects root vs user)
+install_aliases
+
+# Or explicitly choose level
+install_system_aliases  # Requires root, installs to /etc/profile.d/
+install_user_aliases    # User level, updates ~/.bashrc
+
+# Show status
+show_alias_status
+
+# List available aliases
+list_aliases
+```
+
+Installed aliases (when tools are available):
+- `ls` → `eza --icons --group-directories-first`
+- `cat` → `bat --style=plain`
+- `grep` → `rg --color=auto`
+- `du` → `dust`
+- `top` → `btop`
+- `help` → `tldr`
+
+## Multi-Stage Installation
+
+For installations that require reboots, use the systemd service:
+
+```bash
+source lib/systemd_service.sh
+
+# Setup multi-stage installation (requires root)
+sudo setup_multi_stage_installation /path/to/ultimate-linux-suite
+
+# Check status
+show_system_service_status
+
+# Mark installation complete (disables service)
+sudo mark_installation_complete
+
+# Reset to run again
+sudo reset_installation_state
+```
+
+The service uses a state machine in `/var/lib/linux-suite/state.json` with:
+- Automatic retry (up to 3 attempts per stage)
+- Boot ID tracking for reboot detection
+- Completion flag to prevent re-running
 
 ## System Tuning
 
@@ -406,12 +497,12 @@ ultimate-linux-suite/
 │   ├── utils.sh             # Utility functions
 │   ├── error_handling.sh    # Error handling and recovery
 │   │
-│   ├── tui.sh               # Modern TUI (gum/fzf/whiptail)
-│   ├── tui_advanced.sh      # Advanced UI components
+│   ├── tui.sh               # Modern TUI (gum/fzf/whiptail) - Dracula theme
+│   ├── tui_advanced.sh      # Advanced UI + navigation/breadcrumbs
 │   │
-│   ├── scan.sh              # Deep hardware scanning
+│   ├── scan.sh              # Deep hardware scanning + optimization recs
 │   ├── tune.sh              # Sysctl configuration generator
-│   ├── state.sh             # State management
+│   ├── state.sh             # State management (root/user paths)
 │   ├── state_advanced.sh    # Advanced state features
 │   │
 │   ├── pkg_cascade.sh       # Cascade installation system
@@ -420,10 +511,12 @@ ultimate-linux-suite/
 │   ├── pkg_verify.sh        # Package verification & checkpoints
 │   ├── utilities.sh         # Utility installation matrix
 │   │
-│   ├── zram.sh              # ZRAM configuration
+│   ├── zram.sh              # ZRAM configuration (zram-generator)
 │   ├── cpu_governor.sh      # CPU governor management
 │   ├── io_scheduler.sh      # I/O scheduler optimization
-│   └── autostart.sh         # Autostart management
+│   ├── autostart.sh         # Autostart management
+│   ├── systemd_service.sh   # System-level systemd service
+│   └── profile_aliases.sh   # Modern CLI alias management
 │
 ├── modules/                 # Feature modules
 │   ├── apps.sh              # Application installer
@@ -449,7 +542,12 @@ ultimate-linux-suite/
 │
 ├── configs/                 # Configuration files
 │   ├── optimization_profiles.conf
+│   ├── modern-cli.sh        # Profile.d alias template
 │   └── app_presets/
+│
+├── .github/                 # GitHub configuration
+│   └── workflows/
+│       └── test.yml         # CI: ShellCheck + multi-distro tests
 │
 ├── docs/                    # Documentation
 │   └── *.md

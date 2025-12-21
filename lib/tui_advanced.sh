@@ -62,6 +62,140 @@ tui_state_restore() {
 }
 
 # ============================================================================
+# Navigation Stack and Breadcrumbs (Blueprint Pattern)
+# ============================================================================
+
+# Global navigation state
+declare -ga NAV_STACK=()
+declare -g NAV_BREADCRUMB="Main"
+declare -g NAV_CURRENT_MENU="main"
+
+# Navigate to a new menu (push to stack)
+# Usage: nav_to "submenu_name"
+nav_to() {
+    local new_menu="$1"
+    NAV_STACK+=("$NAV_CURRENT_MENU")
+    NAV_CURRENT_MENU="$new_menu"
+    nav_update_breadcrumb
+    log_debug "Navigated to: $new_menu (stack depth: ${#NAV_STACK[@]})"
+}
+
+# Navigate back (pop from stack)
+# Usage: nav_back
+# Returns: 0 if navigated back, 1 if at root
+nav_back() {
+    if [[ ${#NAV_STACK[@]} -gt 0 ]]; then
+        NAV_CURRENT_MENU="${NAV_STACK[-1]}"
+        unset 'NAV_STACK[-1]'
+        nav_update_breadcrumb
+        log_debug "Navigated back to: $NAV_CURRENT_MENU (stack depth: ${#NAV_STACK[@]})"
+        return 0
+    else
+        log_debug "Already at root menu"
+        return 1
+    fi
+}
+
+# Update breadcrumb display string
+nav_update_breadcrumb() {
+    NAV_BREADCRUMB="Main"
+    for item in "${NAV_STACK[@]}"; do
+        NAV_BREADCRUMB+=" > $item"
+    done
+    if [[ "$NAV_CURRENT_MENU" != "main" ]]; then
+        NAV_BREADCRUMB+=" > $NAV_CURRENT_MENU"
+    fi
+}
+
+# Get current navigation depth
+nav_depth() {
+    echo "${#NAV_STACK[@]}"
+}
+
+# Check if we can go back
+nav_can_back() {
+    [[ ${#NAV_STACK[@]} -gt 0 ]]
+}
+
+# Reset navigation to root
+nav_reset() {
+    NAV_STACK=()
+    NAV_CURRENT_MENU="main"
+    NAV_BREADCRUMB="Main"
+    log_debug "Navigation reset to root"
+}
+
+# Get current menu name
+nav_current() {
+    echo "$NAV_CURRENT_MENU"
+}
+
+# Display breadcrumb with styling
+# Usage: nav_show_breadcrumb
+nav_show_breadcrumb() {
+    local CYAN=$'\e[36m'
+    local RESET=$'\e[0m'
+    local DIM=$'\e[2m'
+
+    if [[ "$TUI_BACKEND" == "gum" ]] && command -v gum &>/dev/null; then
+        gum style --foreground "${TUI_COLORS[secondary]:-117}" --italic "$NAV_BREADCRUMB"
+    else
+        printf "%b%s%b\n" "${DIM}${CYAN}" "$NAV_BREADCRUMB" "${RESET}"
+    fi
+}
+
+# Create a hierarchical menu with automatic navigation
+# Usage: nav_menu "Menu Title" "Option 1" "Option 2" "[ Back ]"
+# Returns: Selected option (or "back" if back selected)
+nav_menu() {
+    local title="$1"
+    shift
+    local options=("$@")
+
+    # Show breadcrumb
+    nav_show_breadcrumb
+    echo ""
+
+    # Add back option if not at root
+    local has_back=0
+    if nav_can_back; then
+        options+=("← Back")
+        has_back=1
+    fi
+
+    # Show menu
+    local choice
+    choice=$(tui_menu "$title" "${options[@]}")
+
+    # Handle back
+    if [[ "$choice" == "← Back" ]] || [[ "$choice" == "back" ]]; then
+        nav_back
+        echo "back"
+        return 0
+    fi
+
+    echo "$choice"
+}
+
+# Create a submenu that auto-navigates
+# Usage: nav_submenu "SubMenu Name" callback_function
+nav_submenu() {
+    local submenu_name="$1"
+    local callback="$2"
+
+    nav_to "$submenu_name"
+
+    # Call the callback function
+    if declare -f "$callback" &>/dev/null; then
+        "$callback"
+    else
+        log_error "Callback function not found: $callback"
+        nav_back
+        return 1
+    fi
+}
+
+# ============================================================================
 # Helper functions
 # ============================================================================
 

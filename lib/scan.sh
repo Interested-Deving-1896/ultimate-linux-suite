@@ -713,6 +713,220 @@ is_scan_fresh() {
 }
 
 # ============================================================================
+# Optimization Recommendations (Blueprint Algorithms)
+# ============================================================================
+
+# Generate optimization recommendations based on hardware scan
+# Returns JSON with recommended settings for ZRAM, swappiness, scheduler, governor
+generate_optimization_recommendations() {
+    local scan_file="${1:-$STATE_DIR/hardware_scan.json}"
+
+    if [[ ! -f "$scan_file" ]]; then
+        log_error "Scan file not found: $scan_file"
+        return 1
+    fi
+
+    if ! command -v jq &>/dev/null; then
+        log_error "jq required for recommendations"
+        return 1
+    fi
+
+    # Read hardware values
+    local ram_gb=$(jq -r '.memory.total_gb // 8' "$scan_file" 2>/dev/null)
+    local has_ssd=$(jq -r '[.storage[].type] | any(. == "ssd" or . == "nvme")' "$scan_file" 2>/dev/null)
+    local has_nvme=$(jq -r '[.storage[].type] | any(. == "nvme")' "$scan_file" 2>/dev/null)
+    local has_battery=$(jq -r '.virtualization.is_vm == false' "$scan_file" 2>/dev/null)
+    local is_vm=$(jq -r '.virtualization.is_vm // false' "$scan_file" 2>/dev/null)
+
+    # Detect form factor from chassis or battery
+    local form_factor="desktop"
+    if [[ -d /sys/class/power_supply ]]; then
+        for supply in /sys/class/power_supply/*; do
+            if [[ -r "$supply/type" ]] && [[ "$(cat "$supply/type" 2>/dev/null)" == "Battery" ]]; then
+                form_factor="laptop"
+                break
+            fi
+        done
+    fi
+
+    # ---- ZRAM Size: min(RAM/2, 8GB) ----
+    local zram_size_mb
+    local half_ram=$((ram_gb * 1024 / 2))
+    local max_zram=$((8 * 1024))  # 8GB in MB
+    if [[ $half_ram -lt $max_zram ]]; then
+        zram_size_mb=$half_ram
+    else
+        zram_size_mb=$max_zram
+    fi
+
+    # ---- Swappiness based on RAM ----
+    # RAM < 8GB: 60; 8-16GB: 40; 32GB+: 10-20; With ZRAM: 100-180
+    local swappiness
+    local swappiness_with_zram
+    if [[ $ram_gb -lt 8 ]]; then
+        swappiness=60
+        swappiness_with_zram=180
+    elif [[ $ram_gb -lt 16 ]]; then
+        swappiness=40
+        swappiness_with_zram=150
+    elif [[ $ram_gb -lt 32 ]]; then
+        swappiness=20
+        swappiness_with_zram=120
+    else
+        swappiness=10
+        swappiness_with_zram=100
+    fi
+
+    # ---- I/O Scheduler: NVMe → none, SSD → mq-deadline, HDD → bfq ----
+    local io_scheduler_nvme="none"
+    local io_scheduler_ssd="mq-deadline"
+    local io_scheduler_hdd="bfq"
+
+    # ---- CPU Governor: Desktop → performance, Laptop → schedutil ----
+    local cpu_governor
+    if [[ "$form_factor" == "laptop" ]]; then
+        cpu_governor="schedutil"
+    elif [[ "$is_vm" == "true" ]]; then
+        cpu_governor="ondemand"
+    else
+        cpu_governor="performance"
+    fi
+
+    # Output recommendations as JSON
+    cat <<EOF
+{
+    "zram": {
+        "size_mb": $zram_size_mb,
+        "compression": "zstd",
+        "priority": 100
+    },
+    "swappiness": {
+        "without_zram": $swappiness,
+        "with_zram": $swappiness_with_zram
+    },
+    "io_scheduler": {
+        "nvme": "$io_scheduler_nvme",
+        "ssd": "$io_scheduler_ssd",
+        "hdd": "$io_scheduler_hdd"
+    },
+    "cpu_governor": "$cpu_governor",
+    "form_factor": "$form_factor",
+    "profile": "$(
+        if [[ $ram_gb -lt 4 ]]; then
+            echo "low_memory"
+        elif [[ "$form_factor" == "laptop" ]]; then
+            echo "laptop"
+        elif [[ $ram_gb -ge 32 ]]; then
+            echo "workstation"
+        else
+            echo "desktop"
+        fi
+    )"
+}
+EOF
+}
+
+# Save hardware profile with recommendations to blueprint-specified path
+save_hardware_profile() {
+    local output_file="${1:-}"
+
+    # Determine output path
+    if [[ -z "$output_file" ]]; then
+        if [[ $EUID -eq 0 ]]; then
+            output_file="/var/lib/linux-suite/hardware-profile.json"
+        else
+            output_file="${STATE_DIR}/hardware-profile.json"
+        fi
+    fi
+
+    local output_dir=$(dirname "$output_file")
+    mkdir -p "$output_dir" 2>/dev/null || {
+        log_error "Cannot create directory: $output_dir"
+        return 1
+    }
+
+    log_info "Generating hardware profile with optimization recommendations..."
+
+    # Perform scan if not done recently
+    if ! is_scan_fresh "$STATE_DIR/hardware_scan.json" 1; then
+        perform_full_scan || return 1
+    fi
+
+    local scan_file="$STATE_DIR/hardware_scan.json"
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+    # Combine scan data with recommendations
+    if command -v jq &>/dev/null; then
+        local recommendations=$(generate_optimization_recommendations "$scan_file")
+
+        jq --argjson recs "$recommendations" --arg ts "$timestamp" \
+            '. + {"optimization_recommendations": $recs, "profile_generated": $ts}' \
+            "$scan_file" > "$output_file"
+    else
+        # Fallback without jq - just copy scan
+        cp "$scan_file" "$output_file"
+    fi
+
+    if [[ -f "$output_file" ]]; then
+        log_success "Hardware profile saved: $output_file"
+        return 0
+    else
+        log_error "Failed to save hardware profile"
+        return 1
+    fi
+}
+
+# Get hardware profile path
+get_hardware_profile_path() {
+    if [[ $EUID -eq 0 ]]; then
+        echo "/var/lib/linux-suite/hardware-profile.json"
+    else
+        echo "${STATE_DIR}/hardware-profile.json"
+    fi
+}
+
+# Print optimization recommendations
+print_optimization_recommendations() {
+    local scan_file="${1:-$STATE_DIR/hardware_scan.json}"
+
+    if [[ ! -f "$scan_file" ]]; then
+        log_error "Scan file not found. Run perform_full_scan first."
+        return 1
+    fi
+
+    local recs=$(generate_optimization_recommendations "$scan_file")
+
+    echo "=== Optimization Recommendations ==="
+    echo ""
+    echo "Based on your hardware, the following settings are recommended:"
+    echo ""
+
+    if command -v jq &>/dev/null; then
+        echo "ZRAM Configuration:"
+        echo "  Size: $(echo "$recs" | jq -r '.zram.size_mb') MB"
+        echo "  Compression: $(echo "$recs" | jq -r '.zram.compression')"
+        echo ""
+
+        echo "Swappiness:"
+        echo "  Without ZRAM: $(echo "$recs" | jq -r '.swappiness.without_zram')"
+        echo "  With ZRAM: $(echo "$recs" | jq -r '.swappiness.with_zram')"
+        echo ""
+
+        echo "I/O Schedulers:"
+        echo "  NVMe: $(echo "$recs" | jq -r '.io_scheduler.nvme')"
+        echo "  SSD: $(echo "$recs" | jq -r '.io_scheduler.ssd')"
+        echo "  HDD: $(echo "$recs" | jq -r '.io_scheduler.hdd')"
+        echo ""
+
+        echo "CPU Governor: $(echo "$recs" | jq -r '.cpu_governor')"
+        echo "Form Factor: $(echo "$recs" | jq -r '.form_factor')"
+        echo "Profile: $(echo "$recs" | jq -r '.profile')"
+    else
+        echo "$recs"
+    fi
+}
+
+# ============================================================================
 # Module Documentation
 # ============================================================================
 #

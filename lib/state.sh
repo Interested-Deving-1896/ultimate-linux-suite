@@ -36,10 +36,22 @@ fi
 # ============================================================================
 
 readonly STATE_VERSION="1.0"
-readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ultimate-suite"
+
+# Determine state directory based on effective user ID
+# Root operations use /var/lib/linux-suite (system-level, survives user changes)
+# User operations use ~/.local/state/ultimate-suite (per-user state)
+if [[ $EUID -eq 0 ]]; then
+    readonly STATE_DIR="/var/lib/linux-suite"
+else
+    readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ultimate-suite"
+fi
+
 readonly LOCK_FILE="$STATE_DIR/.lock"
 readonly STATE_FILE="$STATE_DIR/state.json"
 readonly HISTORY_FILE="$STATE_DIR/history.json"
+
+# Hardware profile output path (as specified in blueprint)
+readonly HARDWARE_PROFILE_FILE="$STATE_DIR/hardware-profile.json"
 
 # ============================================================================
 # Atomic File Operations

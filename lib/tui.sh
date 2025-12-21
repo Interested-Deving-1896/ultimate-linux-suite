@@ -45,17 +45,33 @@ declare -g TUI_AUTO_DETECT=1
 declare -g TUI_TERM_ROWS=24
 declare -g TUI_TERM_COLS=80
 
-# Color theme configuration
+# Color theme configuration - Dracula palette for optimal terminal readability
 declare -gA TUI_COLORS=(
-    [primary]="#7C3AED"
-    [secondary]="#06B6D4"
-    [success]="#22C55E"
-    [warning]="#F59E0B"
-    [error]="#EF4444"
-    [info]="#3B82F6"
-    [accent]="#8B5CF6"
-    [muted]="#6B7280"
+    [primary]="#bd93f9"     # Purple (ANSI 141)
+    [secondary]="#8be9fd"   # Cyan (ANSI 117)
+    [success]="#50fa7b"     # Green (ANSI 84)
+    [warning]="#f1fa8c"     # Yellow (ANSI 228)
+    [error]="#ff5555"       # Red (ANSI 203)
+    [info]="#8be9fd"        # Cyan (ANSI 117)
+    [accent]="#ff79c6"      # Pink (ANSI 212)
+    [muted]="#6272a4"       # Comment (ANSI 61)
+    [background]="#282a36"  # Background
+    [foreground]="#f8f8f2"  # Foreground
+    [selection]="#44475a"   # Selection
+    [orange]="#ffb86c"      # Orange (ANSI 215)
 )
+
+# Export GUM environment variables for consistent theming
+export GUM_CHOOSE_CURSOR_FOREGROUND="${TUI_COLORS[accent]}"
+export GUM_CHOOSE_SELECTED_FOREGROUND="${TUI_COLORS[success]}"
+export GUM_CHOOSE_HEADER_FOREGROUND="${TUI_COLORS[primary]}"
+export GUM_INPUT_CURSOR_FOREGROUND="${TUI_COLORS[primary]}"
+export GUM_INPUT_PROMPT_FOREGROUND="${TUI_COLORS[accent]}"
+export GUM_SPIN_SPINNER_FOREGROUND="${TUI_COLORS[primary]}"
+export GUM_CONFIRM_PROMPT_FOREGROUND="${TUI_COLORS[primary]}"
+export GUM_CONFIRM_SELECTED_FOREGROUND="${TUI_COLORS[success]}"
+export GUM_FILTER_INDICATOR_FOREGROUND="${TUI_COLORS[accent]}"
+export GUM_FILTER_MATCH_FOREGROUND="${TUI_COLORS[success]}"
 
 # Current theme (dark/light)
 declare -g TUI_THEME="dark"
