@@ -8,6 +8,58 @@
 [[ -n "${_PKG_LOADED:-}" ]] && return 0
 readonly _PKG_LOADED=1
 
+# ============================================================================
+# Dependencies
+# ============================================================================
+
+# Get script directory for relative sourcing
+_PKG_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source logging if not already loaded
+if ! declare -f log_info &>/dev/null; then
+    source "${_PKG_SCRIPT_DIR}/logging.sh" 2>/dev/null || {
+        # Minimal fallback logging functions
+        log_info() { echo "[INFO] $*"; }
+        log_success() { echo "[OK] $*"; }
+        log_warn() { echo "[WARN] $*" >&2; }
+        log_error() { echo "[ERROR] $*" >&2; }
+        log_debug() { [[ "${DEBUG:-0}" == "1" ]] && echo "[DEBUG] $*" >&2; }
+    }
+fi
+
+# Source os_detect if PKG_MANAGER not set
+if [[ -z "${PKG_MANAGER:-}" ]]; then
+    if [[ -f "${_PKG_SCRIPT_DIR}/os_detect.sh" ]]; then
+        source "${_PKG_SCRIPT_DIR}/os_detect.sh" 2>/dev/null
+        # Run detection if function exists
+        if declare -f detect_os &>/dev/null; then
+            detect_os 2>/dev/null || true
+        fi
+    fi
+fi
+
+# Final fallback for PKG_MANAGER
+if [[ -z "${PKG_MANAGER:-}" ]]; then
+    # Auto-detect package manager
+    if command -v apt-get &>/dev/null; then
+        PKG_MANAGER="apt"
+    elif command -v dnf &>/dev/null; then
+        PKG_MANAGER="dnf"
+    elif command -v yum &>/dev/null; then
+        PKG_MANAGER="yum"
+    elif command -v pacman &>/dev/null; then
+        PKG_MANAGER="pacman"
+    elif command -v zypper &>/dev/null; then
+        PKG_MANAGER="zypper"
+    elif command -v apk &>/dev/null; then
+        PKG_MANAGER="apk"
+    elif command -v xbps-install &>/dev/null; then
+        PKG_MANAGER="xbps"
+    else
+        PKG_MANAGER="unknown"
+    fi
+fi
+
 # Update package lists
 pkg_update() {
     log_info "Updating package lists..."

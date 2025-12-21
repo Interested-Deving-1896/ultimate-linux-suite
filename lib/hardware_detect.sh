@@ -10,12 +10,32 @@
 [[ -n "${_HARDWARE_DETECT_LOADED:-}" ]] && return 0
 readonly _HARDWARE_DETECT_LOADED=1
 
+# ============================================================================
+# Dependencies
+# ============================================================================
+
+_HW_DETECT_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source logging with fallback (only log_debug is used here)
+if ! declare -f log_debug &>/dev/null; then
+    source "${_HW_DETECT_SCRIPT_DIR}/logging.sh" 2>/dev/null || {
+        # Minimal fallback for log_debug
+        log_debug() { [[ "${DEBUG:-0}" == "1" ]] && echo "[DEBUG] $*" >&2; }
+    }
+fi
+
+# ============================================================================
 # Hardware detection variables
+# ============================================================================
 declare -g CPU_MODEL=""
 declare -g CPU_VENDOR=""
 declare -g CPU_CORES=""
 declare -g CPU_THREADS=""
 declare -g CPU_FLAGS=""
+declare -g CPU_HAS_AES=0
+declare -g CPU_HAS_AVX=0
+declare -g CPU_HAS_AVX2=0
+declare -g CPU_HAS_SSE42=0
 declare -g GPU_VENDOR=""
 declare -g GPU_MODEL=""
 declare -g RAM_TOTAL=""
@@ -35,7 +55,9 @@ declare -g WIFI_DRIVER=""
 declare -g HAS_BATTERY=0
 declare -g BATTERY_STATUS=""
 declare -g BATTERY_PERCENT=""
+declare -g BATTERY_CAPACITY=""
 declare -g FORM_FACTOR=""
+declare -g CHASSIS_TYPE=""
 
 # Detect CPU information
 detect_cpu() {
@@ -67,11 +89,34 @@ detect_cpu() {
         else
             CPU_THREADS="$CPU_CORES"
         fi
+
+        # Detect CPU features
+        if echo "$CPU_FLAGS" | grep -qw "aes"; then
+            CPU_HAS_AES=1
+        fi
+        if echo "$CPU_FLAGS" | grep -qw "avx"; then
+            CPU_HAS_AVX=1
+        fi
+        if echo "$CPU_FLAGS" | grep -qw "avx2"; then
+            CPU_HAS_AVX2=1
+        fi
+        if echo "$CPU_FLAGS" | grep -qw "sse4_2"; then
+            CPU_HAS_SSE42=1
+        fi
     fi
 
     [[ -z "$CPU_MODEL" ]] && CPU_MODEL="Unknown CPU"
     [[ -z "$CPU_VENDOR" ]] && CPU_VENDOR="unknown"
+
+    local features=""
+    [[ $CPU_HAS_AES -eq 1 ]] && features="${features}AES "
+    [[ $CPU_HAS_AVX -eq 1 ]] && features="${features}AVX "
+    [[ $CPU_HAS_AVX2 -eq 1 ]] && features="${features}AVX2 "
+    [[ $CPU_HAS_SSE42 -eq 1 ]] && features="${features}SSE4.2 "
+    features="${features% }"  # Remove trailing space
+
     log_debug "CPU: $CPU_MODEL ($CPU_VENDOR, $CPU_CORES cores, $CPU_THREADS threads)"
+    [[ -n "$features" ]] && log_debug "CPU Features: $features"
 }
 
 # Detect GPU information
@@ -276,6 +321,18 @@ detect_battery() {
                         full=$(cat "$supply/energy_full")
                         [[ "$full" -gt 0 ]] && BATTERY_PERCENT=$((now * 100 / full))
                     fi
+
+                    # Get battery capacity (design capacity)
+                    if [[ -r "$supply/energy_full_design" ]]; then
+                        local design_wh
+                        design_wh=$(cat "$supply/energy_full_design")
+                        BATTERY_CAPACITY=$((design_wh / 1000000))  # Convert to Wh
+                    elif [[ -r "$supply/charge_full_design" ]]; then
+                        local design_ah
+                        design_ah=$(cat "$supply/charge_full_design")
+                        BATTERY_CAPACITY=$((design_ah / 1000000))  # Convert to Ah
+                    fi
+
                     break
                 fi
             fi
@@ -297,6 +354,153 @@ detect_battery() {
     log_debug "Battery: ${HAS_BATTERY} (${BATTERY_PERCENT:-?}% ${BATTERY_STATUS:-}), Form: $FORM_FACTOR"
 }
 
+# Detect chassis type - returns "desktop", "laptop", "server", or "vm"
+detect_chassis_type() {
+    CHASSIS_TYPE="desktop"
+
+    # Check if running in a VM first
+    if [[ -r /sys/class/dmi/id/product_name ]]; then
+        local product_name
+        product_name=$(cat /sys/class/dmi/id/product_name 2>/dev/null | tr '[:upper:]' '[:lower:]')
+        if echo "$product_name" | grep -qE "virtualbox|vmware|qemu|kvm|xen|hyperv|virtual machine"; then
+            CHASSIS_TYPE="vm"
+            log_debug "Chassis: $CHASSIS_TYPE (detected from product name)"
+            return 0
+        fi
+    fi
+
+    if [[ -r /sys/class/dmi/id/sys_vendor ]]; then
+        local sys_vendor
+        sys_vendor=$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null | tr '[:upper:]' '[:lower:]')
+        if echo "$sys_vendor" | grep -qE "qemu|bochs|virtualbox|vmware|xen|microsoft corporation"; then
+            CHASSIS_TYPE="vm"
+            log_debug "Chassis: $CHASSIS_TYPE (detected from sys vendor)"
+            return 0
+        fi
+    fi
+
+    # Check dmidecode if available for VM detection
+    if cmd_exists dmidecode && [[ $EUID -eq 0 ]]; then
+        local dmi_info
+        dmi_info=$(dmidecode -s system-product-name 2>/dev/null | tr '[:upper:]' '[:lower:]')
+        if echo "$dmi_info" | grep -qE "virtualbox|vmware|qemu|kvm|xen|hyperv|virtual"; then
+            CHASSIS_TYPE="vm"
+            log_debug "Chassis: $CHASSIS_TYPE (detected via dmidecode)"
+            return 0
+        fi
+    fi
+
+    # Check for chassis type from DMI
+    if [[ -r /sys/class/dmi/id/chassis_type ]]; then
+        local chassis
+        chassis=$(cat /sys/class/dmi/id/chassis_type 2>/dev/null)
+        case "$chassis" in
+            3|4|5|6|7|15|16)  # Desktop variants
+                CHASSIS_TYPE="desktop"
+                ;;
+            8|9|10|11|12|14|18|21|31|32)  # Laptop/portable variants
+                CHASSIS_TYPE="laptop"
+                ;;
+            17|23)  # Server/rack mount
+                CHASSIS_TYPE="server"
+                ;;
+            1)  # Other
+                CHASSIS_TYPE="desktop"
+                ;;
+        esac
+    fi
+
+    # Check for battery as fallback indicator for laptop
+    if [[ "$CHASSIS_TYPE" == "desktop" ]] && [[ -d /sys/class/power_supply ]]; then
+        for supply in /sys/class/power_supply/*; do
+            if [[ -r "$supply/type" ]]; then
+                local type
+                type=$(cat "$supply/type" 2>/dev/null)
+                if [[ "$type" == "Battery" ]]; then
+                    CHASSIS_TYPE="laptop"
+                    break
+                fi
+            fi
+        done
+    fi
+
+    log_debug "Chassis: $CHASSIS_TYPE"
+}
+
+# Get battery information - returns formatted string or empty if no battery
+get_battery_info() {
+    if [[ $HAS_BATTERY -eq 0 ]]; then
+        echo ""
+        return 1
+    fi
+
+    local info="Battery: ${BATTERY_PERCENT:-?}% (${BATTERY_STATUS:-unknown})"
+    if [[ -n "$BATTERY_CAPACITY" ]] && [[ "$BATTERY_CAPACITY" -gt 0 ]]; then
+        info="$info, ${BATTERY_CAPACITY}Wh"
+    fi
+    echo "$info"
+    return 0
+}
+
+# Get system profile recommendation based on hardware
+# Returns: gaming, desktop, laptop, server, low_ram, high_ram
+get_system_profile_recommendation() {
+    local profile="desktop"
+
+    # Ensure hardware is detected
+    if [[ -z "$RAM_TOTAL_GB" ]] || [[ -z "$CHASSIS_TYPE" ]]; then
+        detect_hardware >/dev/null 2>&1
+    fi
+
+    # Check chassis type first
+    case "$CHASSIS_TYPE" in
+        vm)
+            profile="desktop"
+            ;;
+        server)
+            profile="server"
+            ;;
+        laptop)
+            profile="laptop"
+            ;;
+    esac
+
+    # RAM-based adjustments
+    local ram_gb=${RAM_TOTAL_GB:-0}
+    if [[ "$ram_gb" =~ ^[0-9]+$ ]]; then
+        if [[ $ram_gb -le 4 ]]; then
+            profile="low_ram"
+        elif [[ $ram_gb -ge 32 ]]; then
+            # High RAM could be server or high-end workstation
+            if [[ "$CHASSIS_TYPE" == "server" ]] || [[ $CPU_CORES -ge 16 ]]; then
+                profile="server"
+            else
+                profile="high_ram"
+            fi
+        fi
+    fi
+
+    # Gaming detection - discrete NVIDIA/AMD GPU + desktop/high_ram
+    if [[ "$GPU_VENDOR" == "nvidia" ]] || [[ "$GPU_VENDOR" == "amd" ]]; then
+        # Exclude integrated GPUs by checking if it's a desktop with good specs
+        if [[ "$CHASSIS_TYPE" == "desktop" ]] || [[ "$CHASSIS_TYPE" == "vm" ]]; then
+            if [[ $ram_gb -ge 16 ]] && [[ $CPU_CORES -ge 4 ]]; then
+                # Check if it's likely a discrete GPU (not integrated)
+                if ! echo "$GPU_MODEL" | grep -qiE "integrated|vega [0-9]+ graphics|uhd|iris"; then
+                    profile="gaming"
+                fi
+            fi
+        fi
+    fi
+
+    # Low RAM overrides everything except explicit laptop
+    if [[ $ram_gb -le 4 ]] && [[ "$profile" != "laptop" ]]; then
+        profile="low_ram"
+    fi
+
+    echo "$profile"
+}
+
 # Main detection function
 detect_hardware() {
     log_debug "Starting hardware detection..."
@@ -308,6 +512,7 @@ detect_hardware() {
     detect_network
     detect_wifi
     detect_battery
+    detect_chassis_type
 
     log_debug "Hardware detection complete"
 }
@@ -328,6 +533,130 @@ print_hardware_summary() {
     if [[ "$HAS_BATTERY" -eq 1 ]]; then
         printf "Battery: %s%% (%s)\n" "${BATTERY_PERCENT:-?}" "${BATTERY_STATUS:-unknown}"
     fi
+}
+
+# JSON output for CPU information
+detect_cpu_json() {
+    # Ensure CPU is detected
+    if [[ -z "$CPU_MODEL" ]]; then
+        detect_cpu >/dev/null 2>&1
+    fi
+
+    cat <<EOF
+{
+  "model": "${CPU_MODEL}",
+  "vendor": "${CPU_VENDOR}",
+  "cores": ${CPU_CORES:-0},
+  "threads": ${CPU_THREADS:-0},
+  "features": {
+    "aes": ${CPU_HAS_AES},
+    "avx": ${CPU_HAS_AVX},
+    "avx2": ${CPU_HAS_AVX2},
+    "sse4_2": ${CPU_HAS_SSE42}
+  }
+}
+EOF
+}
+
+# JSON output for GPU information
+detect_gpu_json() {
+    # Ensure GPU is detected
+    if [[ -z "$GPU_MODEL" ]]; then
+        detect_gpu >/dev/null 2>&1
+    fi
+
+    # Escape double quotes in GPU_MODEL for JSON
+    local gpu_model_escaped="${GPU_MODEL//\"/\\\"}"
+
+    cat <<EOF
+{
+  "model": "${gpu_model_escaped}",
+  "vendor": "${GPU_VENDOR}"
+}
+EOF
+}
+
+# JSON output for RAM information
+detect_ram_json() {
+    # Ensure RAM is detected
+    if [[ -z "$RAM_TOTAL_GB" ]]; then
+        detect_ram >/dev/null 2>&1
+    fi
+
+    cat <<EOF
+{
+  "total_kb": ${RAM_TOTAL:-0},
+  "total_gb": ${RAM_TOTAL_GB:-0},
+  "available_mb": ${RAM_AVAILABLE:-0}
+}
+EOF
+}
+
+# Get complete hardware summary as JSON
+get_hardware_summary_json() {
+    # Ensure all hardware is detected
+    if [[ -z "$CPU_MODEL" ]] || [[ -z "$GPU_MODEL" ]] || [[ -z "$RAM_TOTAL_GB" ]]; then
+        detect_hardware >/dev/null 2>&1
+    fi
+
+    # Escape strings for JSON
+    local cpu_model_escaped="${CPU_MODEL//\"/\\\"}"
+    local gpu_model_escaped="${GPU_MODEL//\"/\\\"}"
+    local wifi_chipset_escaped="${WIFI_CHIPSET//\"/\\\"}"
+    local disk_root_escaped="${DISK_ROOT//\"/\\\"}"
+    local disk_size_escaped="${DISK_SIZE//\"/\\\"}"
+
+    # Get recommended profile
+    local profile
+    profile=$(get_system_profile_recommendation)
+
+    cat <<EOF
+{
+  "cpu": {
+    "model": "${cpu_model_escaped}",
+    "vendor": "${CPU_VENDOR}",
+    "cores": ${CPU_CORES:-0},
+    "threads": ${CPU_THREADS:-0},
+    "features": {
+      "aes": ${CPU_HAS_AES},
+      "avx": ${CPU_HAS_AVX},
+      "avx2": ${CPU_HAS_AVX2},
+      "sse4_2": ${CPU_HAS_SSE42}
+    }
+  },
+  "gpu": {
+    "model": "${gpu_model_escaped}",
+    "vendor": "${GPU_VENDOR}"
+  },
+  "ram": {
+    "total_kb": ${RAM_TOTAL:-0},
+    "total_gb": ${RAM_TOTAL_GB:-0},
+    "available_mb": ${RAM_AVAILABLE:-0}
+  },
+  "disk": {
+    "root_device": "${disk_root_escaped}",
+    "size": "${disk_size_escaped}",
+    "type": "${DISK_TYPE}",
+    "filesystem": "${DISK_FS}"
+  },
+  "wifi": {
+    "vendor": "${WIFI_VENDOR}",
+    "chipset": "${wifi_chipset_escaped}",
+    "driver": "${WIFI_DRIVER}"
+  },
+  "system": {
+    "chassis_type": "${CHASSIS_TYPE}",
+    "form_factor": "${FORM_FACTOR}",
+    "has_battery": ${HAS_BATTERY},
+    "battery": {
+      "status": "${BATTERY_STATUS}",
+      "percent": ${BATTERY_PERCENT:-0},
+      "capacity": ${BATTERY_CAPACITY:-0}
+    },
+    "recommended_profile": "${profile}"
+  }
+}
+EOF
 }
 
 # Get form factor (uses cached value if available)

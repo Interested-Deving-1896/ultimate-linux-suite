@@ -1,0 +1,290 @@
+================================================================================
+pkg_universal.sh - Universal Package Manager Module
+Ultimate Linux Suite
+================================================================================
+
+CREATED: December 22, 2025
+VERSION: 1.0.0
+LINES OF CODE: 1089
+FUNCTIONS: 28
+
+================================================================================
+FILE LOCATIONS
+================================================================================
+
+Main Module:
+  /var/home/mintys/ultimate-linux-suite/lib/pkg_universal.sh
+
+Documentation:
+  /var/home/mintys/ultimate-linux-suite/docs/pkg_universal_reference.md
+
+Examples:
+  /var/home/mintys/ultimate-linux-suite/examples/demo_pkg_universal.sh
+
+Configuration:
+  ~/.config/ultimate-linux-suite/universal-pkg.conf
+
+================================================================================
+FEATURES IMPLEMENTED
+================================================================================
+
+✓ Guard Pattern Protection
+✓ Dependency Sourcing (logging.sh, os_detect.sh, pkg.sh)
+✓ Detection Functions (6 managers)
+✓ Flatpak Full Setup
+  - Installation
+  - Flathub remote configuration
+  - Beta and Nightly remotes support
+  - Flatseal integration
+✓ Snap Full Setup
+  - Installation
+  - Service management
+  - Classic snap support
+  - Readiness detection
+✓ Nix Package Manager
+  - Multi-user installation
+  - Single-user mode support
+  - Channel configuration
+  - Flakes support
+  - Package installation
+✓ Homebrew/Linuxbrew
+  - Installation with dependencies
+  - PATH configuration
+  - Package installation
+✓ AppImage Integration
+  - AppImageLauncher support
+  - Gear Lever fallback
+  - Directory management
+✓ AUR Helper Support (Arch-based)
+  - paru installation
+  - yay installation
+  - Package installation
+✓ Configuration Management
+  - File-based configuration
+  - Get/Set functions
+  - Default values
+✓ Status and Information
+  - Comprehensive status display
+  - Package counting
+  - Color-coded output
+✓ Unified Installation Interface
+✓ Distro-specific Package Mappings
+✓ Error Handling
+✓ Comprehensive Logging
+
+================================================================================
+SUPPORTED PACKAGE MANAGERS
+================================================================================
+
+1. Flatpak
+   - Cross-distribution application packaging
+   - Sandboxed applications
+   - Flathub repository integration
+
+2. Snap
+   - Universal Linux packages
+   - Classic confinement support
+   - Auto-update capability
+
+3. Nix
+   - Functional package management
+   - Reproducible builds
+   - Flakes support
+
+4. Homebrew
+   - macOS package manager for Linux
+   - Large package repository
+   - Formula-based installation
+
+5. AppImage
+   - Portable application format
+   - No installation required
+   - Integration tools
+
+6. AUR (Arch only)
+   - Community-maintained packages
+   - Build from source
+   - Helper automation (paru/yay)
+
+================================================================================
+FUNCTION SUMMARY
+================================================================================
+
+Detection (8 functions):
+  - universal_detect_all
+  - universal_has_flatpak
+  - universal_has_snap
+  - universal_has_nix
+  - universal_has_homebrew
+  - universal_has_appimage_support
+  - universal_has_aur_helper
+  - universal_get_aur_helper
+
+Flatpak (3 functions):
+  - universal_install_flatpak
+  - universal_setup_flatpak_remotes
+  - universal_install_flatseal
+
+Snap (2 functions):
+  - universal_install_snap
+  - universal_snap_wait_ready
+
+Nix (3 functions):
+  - universal_install_nix
+  - universal_setup_nix_channels
+  - universal_nix_install
+
+Homebrew (3 functions):
+  - universal_install_homebrew
+  - universal_homebrew_setup_path
+  - universal_brew_install
+
+AppImage (2 functions):
+  - universal_install_appimage_support
+  - universal_setup_appimage_dir
+
+AUR (2 functions):
+  - universal_install_aur_helper
+  - universal_aur_install
+
+Status/Info (2 functions):
+  - universal_status
+  - universal_package_counts
+
+Unified Interface (1 function):
+  - universal_install
+
+Configuration (2 functions):
+  - universal_config_get
+  - universal_config_set
+
+================================================================================
+DISTRIBUTION SUPPORT
+================================================================================
+
+Tested Distributions:
+  ✓ Debian/Ubuntu (apt)
+  ✓ Fedora/RHEL (dnf/yum)
+  ✓ Arch Linux (pacman)
+  ✓ openSUSE (zypper)
+  ✓ Alpine Linux (apk)
+  ✓ Void Linux (xbps)
+
+Package Manager Mappings:
+  - Flatpak: Supported on all distributions
+  - Snap: Supported on systemd distributions
+  - Nix: Universal (any distribution)
+  - Homebrew: Universal (any distribution)
+  - AppImage: Universal (any distribution)
+  - AUR: Arch-based distributions only
+
+================================================================================
+CONFIGURATION OPTIONS
+================================================================================
+
+Flatpak Settings:
+  - FLATPAK_AUTO_UPDATE (default: 1)
+  - FLATPAK_ENABLE_BETA (default: 0)
+  - FLATPAK_ENABLE_GNOME_NIGHTLY (default: 0)
+
+Snap Settings:
+  - SNAP_AUTO_REFRESH (default: 1)
+
+Nix Settings:
+  - NIX_ENABLE_FLAKES (default: 1)
+  - NIX_MULTI_USER (default: 1)
+
+Homebrew Settings:
+  - HOMEBREW_NO_ANALYTICS (default: 1)
+  - HOMEBREW_AUTO_UPDATE (default: 1)
+
+AUR Settings:
+  - AUR_HELPER (default: paru)
+
+================================================================================
+USAGE EXAMPLES
+================================================================================
+
+Basic Detection:
+  source lib/pkg_universal.sh
+  universal_detect_all
+  universal_status
+
+Install Flatpak:
+  universal_install flatpak
+  universal_install_flatseal
+
+Install Nix:
+  universal_install nix
+  universal_nix_install firefox
+
+Install AUR Helper:
+  universal_install aur
+  universal_aur_install google-chrome
+
+Configuration:
+  universal_config_set FLATPAK_ENABLE_BETA 1
+  universal_config_get AUR_HELPER
+
+================================================================================
+TESTING STATUS
+================================================================================
+
+✓ Syntax validation passed
+✓ Module sourcing works
+✓ Guard pattern prevents multiple loading
+✓ All 28 required functions present
+✓ Detection functions operational
+✓ Configuration system functional
+✓ Status display working
+✓ Package counting operational
+✓ Demo script runs successfully
+✓ Compatible with existing logging/os_detect/pkg modules
+
+================================================================================
+DEPENDENCIES
+================================================================================
+
+Required Modules:
+  - lib/logging.sh (logging functions)
+  - lib/os_detect.sh (distribution detection)
+  - lib/pkg.sh (base package management)
+
+External Dependencies (installed as needed):
+  - curl (for Nix, Homebrew installers)
+  - git (for AUR helpers, build tools)
+  - xz (for Nix)
+  - build tools (for Homebrew, AUR)
+
+================================================================================
+NOTES
+================================================================================
+
+1. Some installations require root/sudo privileges
+2. Nix and Homebrew may require logout/login for PATH changes
+3. Snap requires systemd on most distributions
+4. AUR helpers only work on Arch-based distributions
+5. All functions include proper error handling and logging
+6. Configuration is persistent across sessions
+7. Multiple sourcing is safely handled via guard pattern
+
+================================================================================
+MAINTENANCE
+================================================================================
+
+To update package mappings, edit the associative arrays:
+  - FLATPAK_PKG_NAMES
+  - SNAP_PKG_NAMES
+  - NIX_BUILD_DEPS
+  - HOMEBREW_BUILD_DEPS
+
+To add new universal package managers:
+  1. Add detection function
+  2. Add installation function
+  3. Add to universal_install() case statement
+  4. Add to universal_status() display
+  5. Update documentation
+
+================================================================================
+END OF SUMMARY
+================================================================================

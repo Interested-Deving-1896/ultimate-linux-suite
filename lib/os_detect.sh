@@ -77,15 +77,15 @@ _determine_family() {
 
     # Direct matches first
     case "$id" in
-        debian|ubuntu|linuxmint|mint|pop|elementary|kali|parrot|zorin|mx|lmde)
+        debian|ubuntu|linuxmint|mint|pop|elementary|kali|parrot|zorin|mx|lmde|antix)
             OS_FAMILY="debian"
             return 0
             ;;
-        fedora|rhel|centos|rocky|alma|almalinux|oracle)
+        fedora|rhel|centos|rocky|alma|almalinux|oracle|oraclelinux)
             OS_FAMILY="fedora"
             return 0
             ;;
-        arch|manjaro|endeavouros|garuda|artix|arcolinux)
+        arch|manjaro|endeavouros|garuda|artix|arcolinux|cachyos)
             OS_FAMILY="arch"
             return 0
             ;;
@@ -99,6 +99,18 @@ _determine_family() {
             ;;
         void)
             OS_FAMILY="void"
+            return 0
+            ;;
+        clear-linux-os|clearlinux)
+            OS_FAMILY="clearlinux"
+            return 0
+            ;;
+        solus)
+            OS_FAMILY="solus"
+            return 0
+            ;;
+        mageia)
+            OS_FAMILY="mageia"
             return 0
             ;;
     esac
@@ -153,6 +165,15 @@ _set_pkg_manager() {
         void)
             PKG_MANAGER="xbps"
             ;;
+        clearlinux)
+            PKG_MANAGER="swupd"
+            ;;
+        solus)
+            PKG_MANAGER="eopkg"
+            ;;
+        mageia)
+            PKG_MANAGER="urpmi"
+            ;;
         *)
             # Try to detect by availability
             if command -v apt &>/dev/null; then
@@ -167,6 +188,12 @@ _set_pkg_manager() {
                 PKG_MANAGER="apk"
             elif command -v xbps-install &>/dev/null; then
                 PKG_MANAGER="xbps"
+            elif command -v swupd &>/dev/null; then
+                PKG_MANAGER="swupd"
+            elif command -v eopkg &>/dev/null; then
+                PKG_MANAGER="eopkg"
+            elif command -v urpmi &>/dev/null; then
+                PKG_MANAGER="urpmi"
             else
                 PKG_MANAGER="unknown"
                 return 1
@@ -181,7 +208,7 @@ _set_uls_distro() {
     local id="${OS_ID,,}"
 
     case "$id" in
-        arch|manjaro|endeavouros|garuda|artix|arcolinux)
+        arch|manjaro|endeavouros|garuda|artix|arcolinux|cachyos)
             ULS_DISTRO="arch"
             ;;
         debian)
@@ -193,10 +220,13 @@ _set_uls_distro() {
         linuxmint|mint|lmde)
             ULS_DISTRO="mint"
             ;;
+        mx|antix)
+            ULS_DISTRO="debian"
+            ;;
         fedora)
             ULS_DISTRO="fedora"
             ;;
-        rhel|centos|rocky|alma|almalinux|oracle)
+        rhel|centos|rocky|alma|almalinux|oracle|oraclelinux)
             ULS_DISTRO="fedora"
             ;;
         opensuse|opensuse-leap|opensuse-tumbleweed|sles|suse)
@@ -213,6 +243,15 @@ _set_uls_distro() {
             ;;
         void)
             ULS_DISTRO="void"
+            ;;
+        clear-linux-os|clearlinux)
+            ULS_DISTRO="clearlinux"
+            ;;
+        solus)
+            ULS_DISTRO="solus"
+            ;;
+        mageia)
+            ULS_DISTRO="mageia"
             ;;
         *)
             ULS_DISTRO="generic"
@@ -355,6 +394,29 @@ print_os_info() {
     printf "Init System: %s\n" "$INIT_SYSTEM"
     printf "Desktop: %s\n" "${DESKTOP_ENV:-none}"
     printf "Session: %s\n" "${SESSION_TYPE:-tty}"
+}
+
+# Output distribution info as JSON
+detect_distribution_json() {
+    # Escape any quotes in values for JSON safety
+    local json_id="${OS_ID//\"/\\\"}"
+    local json_id_like="${OS_ID_LIKE//\"/\\\"}"
+    local json_version="${OS_VERSION_ID//\"/\\\"}"
+    local json_pretty="${OS_PRETTY//\"/\\\"}"
+    local json_family="${OS_FAMILY//\"/\\\"}"
+    local json_pkg_manager="${PKG_MANAGER//\"/\\\"}"
+
+    # Build JSON output
+    cat <<EOF
+{
+  "id": "${json_id}",
+  "id_like": "${json_id_like}",
+  "version": "${json_version}",
+  "pretty_name": "${json_pretty}",
+  "family": "${json_family}",
+  "package_manager": "${json_pkg_manager}"
+}
+EOF
 }
 
 # ============================================================================

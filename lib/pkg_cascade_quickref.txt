@@ -1,0 +1,137 @@
+================================================================================
+PKG CASCADE INSTALLATION SYSTEM - QUICK REFERENCE
+================================================================================
+
+BASIC USAGE
+-----------
+  pkg_cascade_install APP_ID              # Install app (tries all methods)
+  pkg_cascade_install APP_ID METHOD       # Prefer specific method
+  pkg_cascade_batch APP1 APP2 APP3        # Install multiple apps
+
+VERIFICATION
+------------
+  pkg_cascade_verify APP_ID               # Check if installed (returns method)
+  pkg_cascade_version APP_ID              # Get installed version
+  pkg_cascade_show_methods APP_ID         # Show available methods
+
+LIST APPS
+---------
+  pkg_cascade_list_apps                   # Show all defined apps
+
+CONFIGURATION
+-------------
+  pkg_get_method_priority                 # Show current priority
+  pkg_set_method_priority M1 M2 M3        # Set custom priority
+  pkg_cascade_define APP "native:pkg|..." # Define custom app
+
+SNAPSHOTS
+---------
+  pkg_snapshot_create [NAME]              # Create snapshot
+  pkg_snapshot_list                       # List snapshots
+  pkg_snapshot_restore NAME               # View snapshot for restore
+  pkg_snapshot_prune [COUNT]              # Keep last N snapshots (default 5)
+
+TRANSACTIONS
+------------
+  pkg_transaction_history [APP_ID]        # View transaction log
+  pkg_transaction_cleanup                 # Clean old transactions
+
+APPIMAGE
+--------
+  pkg_appimage_install NAME URL [ICON]    # Install AppImage
+  pkg_appimage_remove NAME                # Remove AppImage
+  pkg_appimage_list                       # List installed AppImages
+
+METHODS
+-------
+  native      System package manager (apt, dnf, pacman, etc.)
+  flatpak     Flatpak packages from Flathub
+  snap        Snap packages (supports --classic)
+  appimage    Portable AppImage files
+  source      Source compilation (placeholder)
+
+DEFAULT PRIORITY
+----------------
+  native → flatpak → snap → appimage → source
+
+COMMON WORKFLOWS
+----------------
+
+1. Simple Install:
+   pkg_cascade_install firefox
+
+2. Batch Install with Snapshot:
+   pkg_snapshot_create before-install
+   pkg_cascade_batch firefox vlc gimp
+
+3. Prefer Flatpak:
+   pkg_set_method_priority flatpak native snap
+   pkg_cascade_install discord
+
+4. Custom App:
+   pkg_cascade_define myapp "native:pkg|flatpak:com.example.App"
+   pkg_cascade_install myapp
+
+5. Verify Installation:
+   method=$(pkg_cascade_verify firefox)
+   version=$(pkg_cascade_version firefox)
+   echo "Firefox: $method v$version"
+
+PRE-DEFINED APPS (29+)
+----------------------
+  Browsers:      firefox, chromium, brave
+  Media:         vlc, mpv
+  Development:   code, vscode, sublime, atom
+  Communication: discord, telegram, slack, teams, zoom
+  Gaming:        steam, lutris
+  Music:         spotify
+  Graphics:      gimp, inkscape, blender, krita
+  Video:         obs, kdenlive
+  Office:        libreoffice
+  Utilities:     keepassxc, transmission, filezilla
+  Terminals:     kitty, alacritty
+
+FILES
+-----
+  Module:           lib/pkg_cascade.sh
+  Examples:         lib/pkg_cascade_example.sh
+  Documentation:    lib/PKG_CASCADE_README.md
+  State Dir:        ~/.local/state/ultimate-linux-suite/
+  Transaction Log:  ~/.local/state/ultimate-linux-suite/transactions.log
+  Snapshots:        ~/.local/state/ultimate-linux-suite/snapshots/
+  AppImages:        ~/.local/bin/
+  Desktop Entries:  ~/.local/share/applications/
+
+EXAMPLES
+--------
+  Run interactive examples:
+    ./lib/pkg_cascade_example.sh
+
+  Source the module:
+    source lib/logging.sh
+    source lib/pkg.sh
+    source lib/pkg_cascade.sh
+
+TRANSACTION LOG FORMAT
+----------------------
+  timestamp|app_id|method|status|version|details
+
+TROUBLESHOOTING
+---------------
+  Check methods:        pkg_cascade_show_methods APP_ID
+  View history:         pkg_transaction_history APP_ID
+  Check availability:   flatpak_available && echo OK
+                        snap_available && echo OK
+
+BEST PRACTICES
+--------------
+  1. Create snapshots before major changes
+  2. Use batch installation for multiple apps
+  3. Set method priority based on security/integration needs
+  4. Review transaction logs after installations
+  5. Prune old snapshots regularly
+
+================================================================================
+For full documentation: lib/PKG_CASCADE_README.md
+For examples: ./lib/pkg_cascade_example.sh
+================================================================================
