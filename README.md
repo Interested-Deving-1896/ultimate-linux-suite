@@ -1,14 +1,10 @@
 # Ultimate Linux Suite
 
-[![Release](https://img.shields.io/github/v/release/Nerds489/ultimate-linux-suite)](https://github.com/Nerds489/ultimate-linux-suite/releases/latest)
-[![CI](https://github.com/Nerds489/ultimate-linux-suite/actions/workflows/test.yml/badge.svg)](https://github.com/Nerds489/ultimate-linux-suite/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/Bash-4.0%2B-green.svg)](https://www.gnu.org/software/bash/)
 [![Platform](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://kernel.org)
 
 A comprehensive, multi-distribution Linux system management toolkit. One script to rule them all.
-
-**[Download Latest Release](https://github.com/Nerds489/ultimate-linux-suite/releases/latest)**
 
 ## What's New in v3.0
 
@@ -27,7 +23,7 @@ A comprehensive, multi-distribution Linux system management toolkit. One script 
 - **Package Checkpoints** - Snapshot and rollback your package state
 - **Utility Matrix** - Install modern CLI tools (ripgrep, bat, eza, etc.) easily
 - **Profile Aliases** - Automatic shell aliases for modern CLI tools in `/etc/profile.d/`
-- **Testing Framework** - Built-in test suite with GitHub Actions CI
+- **Testing Framework** - Built-in test suite
 - **Navigation System** - Hierarchical menus with breadcrumb navigation
 
 ## Quick Start
@@ -38,7 +34,7 @@ cd ultimate-linux-suite
 sudo ./ultimate.sh
 ```
 
-**That's it.** Clone and run - no build steps, no packages required.
+**That's it.** Clone and run - no build steps required.
 
 ### First-Run Experience
 
@@ -104,17 +100,6 @@ cd ultimate-linux-suite
 sudo make install
 ultimate-linux-suite  # Run from anywhere
 ```
-
-### Option 3: Package Install
-
-Download from [Releases](https://github.com/Nerds489/ultimate-linux-suite/releases/latest):
-
-| Distribution | Package | Install Command |
-|--------------|---------|-----------------|
-| Debian/Ubuntu/Mint | `.deb` | `sudo dpkg -i ultimate-linux-suite_*.deb` |
-| Fedora/RHEL/CentOS | `.tar.gz` | Extract and run `sudo make install` |
-| Arch Linux | `.tar.gz` | Extract, `cd packaging/arch && makepkg -si` |
-| openSUSE | `.tar.gz` | Extract and run `sudo make install` |
 
 ## Module Reference
 
@@ -485,7 +470,6 @@ Unknown distributions fall back to generic mode with basic functionality.
 ultimate-linux-suite/
 ├── ultimate.sh              # Main entry point
 ├── Makefile                 # Build & install targets
-├── IMPLEMENTATION_PLAN.md   # Development roadmap
 │
 ├── lib/                     # Core libraries
 │   ├── logging.sh           # Multi-level logging with file output
@@ -545,19 +529,20 @@ ultimate-linux-suite/
 │   ├── modern-cli.sh        # Profile.d alias template
 │   └── app_presets/
 │
-├── .github/                 # GitHub configuration
-│   └── workflows/
-│       └── test.yml         # CI: ShellCheck + multi-distro tests
+├── menus/                   # Menu definitions
+│   ├── main_menu.sh
+│   ├── apps_menu.sh
+│   ├── drivers_menu.sh
+│   ├── optimize_menu.sh
+│   └── recovery_menu.sh
 │
-├── docs/                    # Documentation
-│   └── *.md
+├── drivers/                 # Hardware driver scripts
+│   ├── amd/, nvidia/, intel/
+│   ├── broadcom/, realtek-*/
+│   └── README.md
 │
-└── packaging/               # Distribution packages
-    ├── debian/
-    ├── rpm/
-    ├── opensuse/
-    ├── arch/
-    └── scripts/
+└── docs/                    # Documentation
+    └── *.md
 ```
 
 ## Testing
@@ -674,4 +659,3 @@ MIT License - see [LICENSE](LICENSE) file.
 
 - **Repository:** https://github.com/Nerds489/ultimate-linux-suite
 - **Issues:** https://github.com/Nerds489/ultimate-linux-suite/issues
-- **Releases:** https://github.com/Nerds489/ultimate-linux-suite/releases

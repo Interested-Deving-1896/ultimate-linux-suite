@@ -3,24 +3,19 @@
 # Targets:
 #   make install    - Install to system (requires root)
 #   make uninstall  - Remove from system (requires root)
-#   make deb        - Build .deb package
-#   make rpm        - Build Fedora .rpm package
-#   make arch       - Build Arch package
-#   make opensuse   - Build openSUSE package
-#   make all-pkgs   - Build all package formats
 #   make clean      - Clean build artifacts
 #   make test       - Run syntax checks
 
 PREFIX ?= /usr/local
 DESTDIR ?=
 PKGNAME = ultimate-linux-suite
-VERSION = 1.0.0
+VERSION = 3.0.0
 
 INSTALL_DIR = $(DESTDIR)$(PREFIX)/share/$(PKGNAME)
 BIN_DIR = $(DESTDIR)$(PREFIX)/bin
 DOC_DIR = $(DESTDIR)$(PREFIX)/share/doc/$(PKGNAME)
 
-.PHONY: all install uninstall deb rpm arch opensuse all-pkgs clean test help
+.PHONY: all install uninstall clean test help
 
 all: help
 
@@ -30,11 +25,6 @@ help:
 	@echo "Usage:"
 	@echo "  make install     Install to $(PREFIX) (requires root)"
 	@echo "  make uninstall   Remove from $(PREFIX) (requires root)"
-	@echo "  make deb         Build .deb package"
-	@echo "  make rpm         Build Fedora/RHEL .rpm"
-	@echo "  make arch        Build Arch Linux package"
-	@echo "  make opensuse    Build openSUSE .rpm"
-	@echo "  make all-pkgs    Build all package formats"
 	@echo "  make clean       Clean build artifacts"
 	@echo "  make test        Run syntax checks"
 	@echo ""
@@ -70,21 +60,6 @@ uninstall:
 	rm -f $(BIN_DIR)/$(PKGNAME)
 	rm -rf $(DOC_DIR)
 	@echo "Uninstall complete!"
-
-deb:
-	@./packaging/scripts/build-deb.sh
-
-rpm:
-	@./packaging/scripts/build-rpm.sh
-
-arch:
-	@./packaging/scripts/build-arch.sh
-
-opensuse:
-	@./packaging/scripts/build-opensuse.sh
-
-all-pkgs:
-	@./packaging/scripts/build-all.sh all
 
 clean:
 	rm -rf build/

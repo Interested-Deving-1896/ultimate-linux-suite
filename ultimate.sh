@@ -3,7 +3,7 @@
 # Ultimate Linux Suite - Main Entry Point
 #
 # A comprehensive Linux system optimization and management toolkit.
-# Run with: sudo ./suite.sh
+# Run with: sudo ./ultimate.sh
 #
 # This script avoids `set -e` to handle errors gracefully and provide
 # meaningful error messages instead of silent failures.

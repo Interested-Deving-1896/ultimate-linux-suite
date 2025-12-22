@@ -15,7 +15,7 @@ All critical blueprint requirements have been implemented and verified.
 | **Optimization Algorithms** | ZRAM, swappiness, I/O, governor formulas | `lib/scan.sh` - `generate_optimization_recommendations()` | ✅ DONE |
 | **Hardware Profile** | JSON output with recommendations | `lib/scan.sh` - `save_hardware_profile()` | ✅ DONE |
 | **Navigation/Breadcrumbs** | Stack-based navigation | `lib/tui_advanced.sh` - `nav_to()`, `nav_back()` | ✅ DONE |
-| **GitHub Actions CI** | Multi-distro container testing | `.github/workflows/test.yml` | ✅ DONE |
+| **GitHub Actions CI** | Multi-distro container testing | Removed (run locally with `make test`) | ⏸️ DEFERRED |
 | **YAML App Database** | YAML structure | Kept Bash (works fine, YAML is future enhancement) | ⏸️ DEFERRED |
 | **BATS Testing** | BATS test structure | Custom framework.sh (works fine) | ⏸️ DEFERRED |
 
@@ -154,48 +154,23 @@ Blueprint specifies these formulas:
 
 ---
 
-## Phase 4: Testing & CI
+## Phase 4: Testing
 
-### 4.1 GitHub Actions Workflow
+### 4.1 Local Testing
 
-Create `.github/workflows/test.yml`:
-```yaml
-name: Test Suite
-on: [push, pull_request]
-
-jobs:
-  shellcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ludeeus/action-shellcheck@master
-        with:
-          severity: warning
-
-  test-matrix:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - distro: ubuntu:22.04
-            pkg_cmd: "apt-get update && apt-get install -y bats"
-          - distro: fedora:40
-            pkg_cmd: "dnf install -y bats"
-          - distro: archlinux:latest
-            pkg_cmd: "pacman -Sy --noconfirm bats"
-          - distro: alpine:latest
-            pkg_cmd: "apk add bats bash diffutils"
-    runs-on: ubuntu-latest
-    container: ${{ matrix.distro }}
-    steps:
-      - uses: actions/checkout@v4
-      - run: ${{ matrix.pkg_cmd }}
-      - run: bats test/
+Run tests locally with:
+```bash
+make test
 ```
 
-### 4.2 BATS Test Structure (Optional)
+This runs bash syntax checking on all scripts.
 
-Current custom framework works. BATS migration is optional enhancement.
+### 4.2 Test Framework
+
+Custom test framework in `tests/framework.sh` provides:
+- Assertion functions
+- Test lifecycle management
+- Mocking support
 
 ---
 
@@ -258,7 +233,7 @@ update_breadcrumb() {
 | `lib/systemd_service.sh` | System-level service management |
 | `scripts/run-stage.sh` | Stage execution wrapper |
 | `configs/modern-cli.sh` | Alias template for /etc/profile.d |
-| `.github/workflows/test.yml` | CI testing workflow |
+| `tests/framework.sh` | Local test framework |
 
 ## Files to Modify
 

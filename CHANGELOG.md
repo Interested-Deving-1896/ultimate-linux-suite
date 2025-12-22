@@ -34,11 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `nav_to()`, `nav_back()`, `nav_reset()` - Stack-based navigation
   - `nav_show_breadcrumb()` - Visual breadcrumb display
   - `nav_menu()` - Auto-navigation menus with back button
-- **GitHub Actions CI** (`.github/workflows/test.yml`)
-  - ShellCheck static analysis
-  - Bash syntax checking
-  - Multi-distro testing (Ubuntu, Debian, Fedora, Arch, Alpine)
-  - Integration tests for all modules
+- **Local Testing** (`make test`)
+  - Bash syntax checking for all scripts
+  - Test framework in `tests/framework.sh`
 - **Conditional State Paths** - Root vs user operation separation
   - Root: `/var/lib/linux-suite/` (system-level)
   - User: `~/.local/state/ultimate-suite/` (user-level)

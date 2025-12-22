@@ -1,4 +1,0 @@
-# Driver-specific README files are functional documentation that must
-# remain with their respective driver directories for runtime reference.
-# Moving them to /usr/share/doc would break the suite's modular structure.
-ultimate-linux-suite: package-contains-documentation-outside-usr-share-doc [usr/share/ultimate-linux-suite/drivers/*]

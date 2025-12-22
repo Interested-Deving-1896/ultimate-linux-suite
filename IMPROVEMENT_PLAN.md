@@ -276,7 +276,6 @@ execute_queue_item() {
 5. `lib/logging.sh` - Fix printf format
 6. `apps/database.sh` - Fix regex, update packages
 7. `README.md` - Fix entry point, add config docs
-8. `debian/ultimate-linux-suite.1` - Add --non-interactive
 
 ---
 
