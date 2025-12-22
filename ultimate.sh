@@ -42,6 +42,12 @@ source "$SUITE_ROOT/lib/pkg.sh"
 source "$SUITE_ROOT/lib/menu.sh"
 source "$SUITE_ROOT/lib/queue.sh"
 
+# Source additional libraries for first-run and installation
+source "$SUITE_ROOT/lib/systemd_service.sh" 2>/dev/null || true
+source "$SUITE_ROOT/lib/autostart.sh" 2>/dev/null || true
+source "$SUITE_ROOT/lib/pkg_cascade.sh" 2>/dev/null || true
+source "$SUITE_ROOT/lib/pkg_universal.sh" 2>/dev/null || true
+
 # ============================================================================
 # Source application database
 # ============================================================================
@@ -59,6 +65,7 @@ source "$SUITE_ROOT/modules/recovery.sh"
 source "$SUITE_ROOT/modules/services.sh"
 source "$SUITE_ROOT/modules/firewall.sh"
 source "$SUITE_ROOT/modules/setup_profiles.sh"
+source "$SUITE_ROOT/modules/first_run.sh"
 
 # ============================================================================
 # Source menus
@@ -204,6 +211,57 @@ cleanup() {
 }
 
 # ============================================================================
+# First Run Detection and Auto-Start
+# ============================================================================
+
+# Check if this is a first run or resume after reboot
+_check_first_run_needed() {
+    local state_dir="${HOME}/.local/state/ultimate-linux-suite"
+    local complete_flag="${state_dir}/.first_run_complete"
+    local phase_file="${state_dir}/first_run_phase"
+    local system_complete="/var/lib/linux-suite/installation_complete"
+
+    # Check system-level completion first
+    if [[ -f "$system_complete" ]]; then
+        return 1  # Not needed
+    fi
+
+    # Check user-level completion
+    if [[ -f "$complete_flag" ]]; then
+        return 1  # Not needed
+    fi
+
+    # First run is needed
+    return 0
+}
+
+# Check if we're resuming after a reboot
+_check_resuming_after_reboot() {
+    local state_dir="${HOME}/.local/state/ultimate-linux-suite"
+    local phase_file="${state_dir}/first_run_phase"
+    local boot_id_file="${state_dir}/boot_id"
+
+    # No phase file means not resuming
+    [[ ! -f "$phase_file" ]] && return 1
+
+    # Check if boot ID changed (reboot occurred)
+    if [[ -f "$boot_id_file" ]]; then
+        local last_boot_id current_boot_id
+        last_boot_id=$(cat "$boot_id_file" 2>/dev/null)
+        current_boot_id=$(cat /proc/sys/kernel/random/boot_id 2>/dev/null)
+
+        if [[ -n "$last_boot_id" ]] && [[ -n "$current_boot_id" ]] && [[ "$last_boot_id" != "$current_boot_id" ]]; then
+            return 0  # Resuming after reboot
+        fi
+    fi
+
+    # Phase file exists but same boot - still in progress
+    local current_phase
+    current_phase=$(cat "$phase_file" 2>/dev/null)
+    [[ -n "$current_phase" ]] && [[ "$current_phase" != "COMPLETE" ]] && [[ "$current_phase" != "INIT" ]]
+}
+
+# ============================================================================
 # Main function
 # ============================================================================
 
@@ -236,6 +294,32 @@ main() {
         log_info "Non-interactive mode - verification successful"
         print_os_info
         exit 0
+    fi
+
+    # AUTO-DETECT FIRST RUN - This is the key integration point
+    # Check if first run is needed or if we're resuming after reboot
+    if _check_first_run_needed || _check_resuming_after_reboot; then
+        log_info "First-run setup required or resuming after reboot..."
+        echo ""
+        echo "========================================"
+        echo "  Ultimate Linux Suite - First Run"
+        echo "========================================"
+        echo ""
+
+        # Run the first run wizard - this handles everything
+        if declare -f run_first_run &>/dev/null; then
+            run_first_run
+
+            # After first run completes, continue to main menu
+            if is_first_run_complete 2>/dev/null; then
+                log_success "First-run setup complete!"
+                echo ""
+                echo "Continuing to main menu..."
+                sleep 2
+            fi
+        else
+            log_warn "First run module not available, skipping..."
+        fi
     fi
 
     # Run main menu

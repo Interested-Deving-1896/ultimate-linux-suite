@@ -153,6 +153,7 @@ _generate_stage_runner() {
 # run-stage.sh - Stage Runner for Ultimate Linux Suite
 #
 # Executed by systemd service after boot to continue multi-stage installation
+# This runs as root at system boot (before user login)
 #
 
 set -euo pipefail
@@ -162,6 +163,7 @@ SUITE_DIR="SUITE_DIR_PLACEHOLDER"
 STATE_FILE="/var/lib/linux-suite/state.json"
 LOG_FILE="/var/lib/linux-suite/logs/stage-$(date +%Y%m%d-%H%M%S).log"
 COMPLETE_FLAG="/var/lib/linux-suite/installation_complete"
+USER_STATE_DIR=""
 MAX_RETRIES=3
 
 # Logging
@@ -175,112 +177,82 @@ mkdir -p "$(dirname "$LOG_FILE")"
 
 log_info "=== Ultimate Linux Suite Stage Runner ==="
 log_info "Boot ID: $(cat /proc/sys/kernel/random/boot_id)"
+log_info "Suite directory: $SUITE_DIR"
 
-# Check if jq is available
-if ! command -v jq &>/dev/null; then
-    log_error "jq is required but not installed"
-    exit 1
-fi
+# Find the user who started the installation
+find_install_user() {
+    # Look for the user state directory
+    for user_home in /home/*; do
+        local user_state="${user_home}/.local/state/ultimate-linux-suite"
+        if [[ -d "$user_state" ]] && [[ -f "${user_state}/first_run_phase" ]]; then
+            USER_STATE_DIR="$user_state"
+            local username=$(basename "$user_home")
+            log_info "Found installation state for user: $username"
+            export HOME="$user_home"
+            export USER="$username"
+            return 0
+        fi
+    done
 
-# Get current stage
-get_stage() {
-    jq -r '.current_stage // 0' "$STATE_FILE" 2>/dev/null || echo 0
+    # Check root's state
+    if [[ -d "/root/.local/state/ultimate-linux-suite" ]]; then
+        USER_STATE_DIR="/root/.local/state/ultimate-linux-suite"
+        export HOME="/root"
+        export USER="root"
+        log_info "Using root's installation state"
+        return 0
+    fi
+
+    log_error "No installation state found"
+    return 1
 }
 
-# Get stage name
-get_stage_name() {
-    jq -r '.stage_name // "INIT"' "$STATE_FILE" 2>/dev/null || echo "INIT"
-}
-
-# Get retry count
-get_retry_count() {
-    jq -r '.retry_count // 0' "$STATE_FILE" 2>/dev/null || echo 0
-}
-
-# Update state
-update_state() {
-    local filter="$1"
-    local tmp=$(mktemp)
-    local now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-    jq "$filter | .updated_at = \"$now\" | .boot_id = \"$(cat /proc/sys/kernel/random/boot_id)\"" \
-        "$STATE_FILE" > "$tmp" && mv "$tmp" "$STATE_FILE"
-}
-
-# Increment retry count
-increment_retry() {
-    update_state '.retry_count = (.retry_count + 1)'
-}
-
-# Reset retry count and advance stage
-advance_stage() {
-    local new_stage=$1
-    local new_name=$2
-    update_state ".current_stage = $new_stage | .stage_name = \"$new_name\" | .retry_count = 0 | .completed_stages += [$(get_stage)]"
+# Get current phase from user state
+get_user_phase() {
+    if [[ -f "${USER_STATE_DIR}/first_run_phase" ]]; then
+        cat "${USER_STATE_DIR}/first_run_phase"
+    else
+        echo "VERIFY"
+    fi
 }
 
 # Mark as complete
 mark_complete() {
     touch "$COMPLETE_FLAG"
-    update_state '.stage_name = "COMPLETE"'
     log_success "Installation complete!"
 
     # Disable service
     systemctl disable linux-suite.service 2>/dev/null || true
 }
 
-# Record error
-record_error() {
-    local error_msg="$1"
-    local tmp=$(mktemp)
-    local now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-    jq --arg msg "$error_msg" --arg time "$now" \
-        '.errors += [{"timestamp": $time, "message": $msg}]' \
-        "$STATE_FILE" > "$tmp" && mv "$tmp" "$STATE_FILE"
-}
-
 # Main execution
 main() {
-    local current_stage=$(get_stage)
-    local stage_name=$(get_stage_name)
-    local retry_count=$(get_retry_count)
+    log_info "Starting stage runner..."
 
-    log_info "Current stage: $current_stage ($stage_name)"
-    log_info "Retry count: $retry_count / $MAX_RETRIES"
-
-    # Check retry limit
-    if [[ $retry_count -ge $MAX_RETRIES ]]; then
-        log_error "Max retries ($MAX_RETRIES) exceeded for stage $stage_name"
-        record_error "Max retries exceeded for stage $stage_name"
-        mark_complete  # Mark complete to prevent infinite loops
+    # Find the user who started the installation
+    if ! find_install_user; then
+        log_error "Cannot find installation state - marking complete to prevent loops"
+        mark_complete
         exit 1
     fi
 
-    # Increment retry before execution
-    increment_retry
+    local current_phase=$(get_user_phase)
+    log_info "Resuming from phase: $current_phase"
 
-    # Source the first_run module if it exists
-    if [[ -f "${SUITE_DIR}/modules/first_run.sh" ]]; then
-        log_info "Sourcing first_run.sh module"
-        source "${SUITE_DIR}/modules/first_run.sh"
+    # Run the main suite script which will detect and resume first_run
+    if [[ -x "${SUITE_DIR}/ultimate.sh" ]]; then
+        log_info "Launching ultimate.sh to resume installation..."
 
-        # Resume from current phase
-        if declare -f run_first_run &>/dev/null; then
-            log_info "Executing first_run from stage: $stage_name"
-            if run_first_run --resume "$stage_name"; then
-                log_success "Stage completed successfully"
-            else
-                log_error "Stage execution failed"
-                record_error "Stage $stage_name execution failed"
-                exit 1
-            fi
-        else
-            log_error "run_first_run function not found"
+        # Run the suite - it will auto-detect the resume state
+        cd "$SUITE_DIR"
+        bash "${SUITE_DIR}/ultimate.sh" 2>&1 | tee -a "$LOG_FILE" || {
+            log_error "ultimate.sh failed"
             exit 1
-        fi
+        }
+
+        log_success "Installation resumed successfully"
     else
-        log_error "first_run.sh module not found at ${SUITE_DIR}/modules/first_run.sh"
+        log_error "ultimate.sh not found at ${SUITE_DIR}/ultimate.sh"
         exit 1
     fi
 }

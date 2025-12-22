@@ -42,6 +42,9 @@ source "${LIB_DIR}/tune.sh" 2>/dev/null || log_debug "tune.sh not available"
 source "${LIB_DIR}/pkg_universal.sh" 2>/dev/null || log_debug "pkg_universal.sh not available"
 source "${LIB_DIR}/utilities.sh" 2>/dev/null || log_debug "utilities.sh not available"
 source "${LIB_DIR}/os_detect.sh" 2>/dev/null || log_debug "os_detect.sh not available"
+source "${LIB_DIR}/pkg_cascade.sh" 2>/dev/null || log_debug "pkg_cascade.sh not available"
+source "${LIB_DIR}/systemd_service.sh" 2>/dev/null || log_debug "systemd_service.sh not available"
+source "${LIB_DIR}/pkg.sh" 2>/dev/null || log_debug "pkg.sh not available"
 
 # Run OS detection if function exists
 if declare -f detect_os &>/dev/null; then
@@ -199,34 +202,30 @@ phase_init() {
     echo "  Ultimate Linux Suite - First Run"
     echo "========================================"
     echo ""
-    echo "This wizard will:"
+    echo "This wizard will AUTOMATICALLY:"
     echo "  1. Scan your hardware"
     echo "  2. Apply system optimizations"
-    echo "  3. Install package managers"
-    echo "  4. Install essential utilities"
+    echo "  3. Install ALL package managers (Flatpak, Snap, AppImage)"
+    echo "  4. Install ALL essential utilities"
+    echo "  5. Reboot when necessary"
     echo ""
-    echo "Some phases may require a reboot."
-    echo "The wizard will resume automatically."
+    echo "NO USER INTERACTION REQUIRED"
+    echo "The wizard handles everything automatically."
     echo ""
+
+    sleep 2
 
     # Check prerequisites
     log_info "Checking prerequisites..."
 
     # Verify we can write to config directories
-    if ! mkdir -p "${HOME}/.config" 2>/dev/null; then
-        log_error "Cannot write to ~/.config"
-        return 1
-    fi
+    mkdir -p "${HOME}/.config" 2>/dev/null || true
+    mkdir -p "${HOME}/.local/state/ultimate-linux-suite" 2>/dev/null || true
 
-    # Check for root/sudo access
-    if ! sudo -n true 2>/dev/null; then
-        log_warn "Sudo access may be required for some operations"
-        echo ""
-        echo "Please enter your password if prompted:"
-        if ! sudo true; then
-            log_error "Cannot obtain sudo access"
-            return 1
-        fi
+    # Verify root access (should already have it from ultimate.sh)
+    if [[ $EUID -ne 0 ]] && ! sudo -n true 2>/dev/null; then
+        log_error "Root access required. Please run with sudo."
+        return 1
     fi
 
     log_success "Prerequisites check passed"
@@ -320,50 +319,50 @@ phase_reboot_required() {
     echo ""
     echo "A system reboot is required to apply optimizations."
     echo ""
-    echo "Options:"
-    echo "  1) Reboot now (recommended)"
-    echo "  2) Continue without reboot"
-    echo "  3) Reboot later (exit wizard)"
-    echo ""
 
-    # Setup resume for after reboot
+    # Save phase BEFORE setting up reboot - we'll resume at VERIFY
+    save_phase "VERIFY"
+
+    # Save boot ID for reboot detection
+    autostart_save_boot_id 2>/dev/null || true
+
+    # Setup system-level resume service (runs at boot, no login required)
+    local suite_dir
+    suite_dir=$(dirname "$SCRIPT_DIR")
+    if type setup_multi_stage_installation &>/dev/null; then
+        log_info "Setting up system-level resume service..."
+        setup_multi_stage_installation "$suite_dir" 2>/dev/null || true
+    fi
+
+    # Also setup user-level autostart as backup
     if type setup_resume_system &>/dev/null; then
         local script_path
         script_path=$(readlink -f "${BASH_SOURCE[0]}")
-        # Will resume at VERIFY phase
-        save_phase "VERIFY"
-        setup_resume_system "$script_path" "VERIFY"
+        setup_resume_system "$script_path" "VERIFY" 2>/dev/null || true
     fi
 
-    # Ask user
-    local choice
-    read -r -p "Enter choice [1-3]: " choice
+    # AUTOMATIC REBOOT - NO PROMPTS
+    log_info "System will reboot automatically in 3 seconds..."
+    echo ""
+    echo "========================================"
+    echo "  REBOOTING NOW"
+    echo "  Setup will continue automatically"
+    echo "========================================"
+    echo ""
 
-    case "$choice" in
-        1)
-            log_info "Initiating reboot..."
-            autostart_save_boot_id 2>/dev/null || true
-            echo ""
-            echo "The system will reboot in 5 seconds..."
-            echo "The wizard will resume automatically after login."
-            sleep 5
-            sudo reboot
-            ;;
-        2)
-            log_warn "Continuing without reboot - some changes may not take effect"
-            advance_phase
-            ;;
-        3)
-            log_info "Exiting wizard. Run again to continue."
-            exit 0
-            ;;
-        *)
-            log_warn "Invalid choice, continuing without reboot"
-            advance_phase
-            ;;
-    esac
+    sleep 3
 
-    return 0
+    # Force reboot
+    if [[ $EUID -eq 0 ]]; then
+        systemctl reboot || reboot || shutdown -r now
+    else
+        sudo systemctl reboot || sudo reboot || sudo shutdown -r now
+    fi
+
+    # If we get here, reboot failed
+    log_error "Automatic reboot failed!"
+    log_info "Please reboot manually. Setup will continue after reboot."
+    exit 0
 }
 
 # Phase 4: VERIFY
@@ -412,50 +411,69 @@ phase_pkg_managers() {
     log_info "${PHASE_DESCRIPTIONS[PKG_MANAGERS]}"
 
     echo ""
-    echo "Installing universal package managers..."
+    echo "Installing ALL universal package managers automatically..."
     echo ""
 
     local installed=0
+    local failed=0
 
-    # Install Flatpak
+    # Install Flatpak - ALWAYS (primary universal package manager)
+    log_info "[1/4] Installing Flatpak..."
     if type universal_install_flatpak &>/dev/null; then
-        log_info "Installing Flatpak..."
         if universal_install_flatpak; then
             ((installed++))
+            log_success "Flatpak installed"
+        else
+            ((failed++))
+            log_warn "Flatpak installation failed"
         fi
+    elif type pkg_install &>/dev/null; then
+        # Fallback to native package manager
+        pkg_install flatpak && ((installed++)) || ((failed++))
     fi
 
-    # Ask about Snap (optional on some systems)
-    echo ""
-    read -r -p "Install Snap package manager? [y/N]: " snap_choice
-    if [[ "$snap_choice" =~ ^[Yy] ]]; then
-        if type universal_install_snap &>/dev/null; then
-            log_info "Installing Snap..."
-            if universal_install_snap; then
-                ((installed++))
-            fi
+    # Install Snap - ALWAYS (for classic apps and Ubuntu ecosystem)
+    log_info "[2/4] Installing Snap..."
+    if type universal_install_snap &>/dev/null; then
+        if universal_install_snap; then
+            ((installed++))
+            log_success "Snap installed"
+        else
+            ((failed++))
+            log_warn "Snap installation failed"
         fi
+    elif type pkg_install &>/dev/null; then
+        pkg_install snapd && ((installed++)) || ((failed++))
     fi
 
-    # Ask about Nix (optional, advanced)
-    echo ""
-    read -r -p "Install Nix package manager? [y/N]: " nix_choice
-    if [[ "$nix_choice" =~ ^[Yy] ]]; then
-        if type universal_install_nix &>/dev/null; then
-            log_info "Installing Nix..."
-            if universal_install_nix; then
-                ((installed++))
-            fi
-        fi
-    fi
-
-    # AppImage support
+    # Install AppImage support - ALWAYS
+    log_info "[3/4] Setting up AppImage support..."
     if type universal_install_appimage_support &>/dev/null; then
-        log_info "Setting up AppImage support..."
-        universal_install_appimage_support || true
+        if universal_install_appimage_support; then
+            ((installed++))
+            log_success "AppImage support installed"
+        else
+            log_warn "AppImage support installation failed (optional)"
+        fi
     fi
 
-    log_success "Installed $installed package manager(s)"
+    # Install AUR helper on Arch-based systems - ALWAYS
+    if type is_arch &>/dev/null && is_arch; then
+        log_info "[4/4] Installing AUR helper (paru)..."
+        if type universal_install_aur_helper &>/dev/null; then
+            if universal_install_aur_helper paru; then
+                ((installed++))
+                log_success "AUR helper installed"
+            else
+                log_warn "AUR helper installation failed (optional)"
+            fi
+        fi
+    else
+        log_info "[4/4] Skipping AUR helper (not Arch-based)"
+    fi
+
+    echo ""
+    log_success "Package manager setup complete: $installed installed, $failed failed"
     advance_phase
     return 0
 }
@@ -466,25 +484,114 @@ phase_utilities() {
     log_info "${PHASE_DESCRIPTIONS[UTILITIES]}"
 
     echo ""
-    echo "Installing essential utilities..."
+    echo "Installing essential utilities automatically using cascade system..."
     echo ""
 
-    # Install essential utilities
-    if type util_install_essentials &>/dev/null; then
-        util_install_essentials
-    else
-        log_warn "Utilities module not available"
-    fi
+    local installed=0
+    local failed=0
 
-    # Offer additional utility categories
-    echo ""
-    read -r -p "Install modern CLI tools (fd, ripgrep, bat, etc.)? [Y/n]: " modern_choice
-    if [[ ! "$modern_choice" =~ ^[Nn] ]]; then
-        if type util_install_modern_cli &>/dev/null; then
-            util_install_modern_cli
+    # Essential utilities to install - try cascade for each
+    local essential_utils=(
+        "curl"
+        "wget"
+        "git"
+        "vim"
+        "htop"
+        "tree"
+        "jq"
+        "rsync"
+        "tmux"
+        "unzip"
+        "tar"
+    )
+
+    log_info "Installing ${#essential_utils[@]} essential utilities..."
+
+    for util in "${essential_utils[@]}"; do
+        if command -v "$util" &>/dev/null; then
+            log_debug "$util already installed"
+            ((installed++))
+            continue
         fi
+
+        log_info "Installing: $util"
+        # Use smart install which tries all methods automatically
+        if type pkg_smart_install &>/dev/null; then
+            if pkg_smart_install "$util" 2>/dev/null; then
+                ((installed++))
+            else
+                ((failed++))
+                log_warn "Failed to install: $util"
+            fi
+        elif type pkg_cascade_install &>/dev/null; then
+            # Fallback to cascade
+            if pkg_cascade_install "$util" 2>/dev/null; then
+                ((installed++))
+            else
+                ((failed++))
+            fi
+        elif type pkg_install &>/dev/null; then
+            # Final fallback to native package manager
+            if pkg_install "$util" 2>/dev/null; then
+                ((installed++))
+            else
+                ((failed++))
+            fi
+        fi
+    done
+
+    echo ""
+    log_success "Essential utilities: $installed installed, $failed failed"
+
+    # Modern CLI tools - INSTALL AUTOMATICALLY
+    echo ""
+    log_info "Installing modern CLI tools..."
+
+    local modern_tools=(
+        "fd"        # Better find
+        "ripgrep"   # Better grep (rg)
+        "bat"       # Better cat
+        "eza"       # Better ls (or exa)
+        "fzf"       # Fuzzy finder
+        "zoxide"    # Better cd
+    )
+
+    for tool in "${modern_tools[@]}"; do
+        local cmd_name="$tool"
+        [[ "$tool" == "ripgrep" ]] && cmd_name="rg"
+        [[ "$tool" == "eza" ]] && cmd_name="eza"
+        [[ "$tool" == "fd" ]] && cmd_name="fd"
+        [[ "$tool" == "bat" ]] && cmd_name="bat"
+
+        if command -v "$cmd_name" &>/dev/null; then
+            log_debug "$tool already installed"
+            continue
+        fi
+
+        log_info "Installing modern tool: $tool"
+        # Use smart install for maximum compatibility
+        if type pkg_smart_install &>/dev/null; then
+            pkg_smart_install "$tool" 2>/dev/null || true
+        elif type pkg_cascade_install &>/dev/null; then
+            pkg_cascade_install "$tool" 2>/dev/null || true
+        elif type pkg_install &>/dev/null; then
+            pkg_install "$tool" 2>/dev/null || true
+        fi
+    done
+
+    # Install from essentials function if available
+    if type util_install_essentials &>/dev/null; then
+        log_info "Running additional utility installation..."
+        util_install_essentials 2>/dev/null || true
     fi
 
+    if type util_install_modern_cli &>/dev/null; then
+        log_info "Running modern CLI installation..."
+        util_install_modern_cli 2>/dev/null || true
+    fi
+
+    echo ""
+    log_success "Utility installation complete"
     advance_phase
     return 0
 }
@@ -497,25 +604,11 @@ phase_reboot_optional() {
     echo ""
     echo "All essential setup is complete."
     echo ""
-    echo "A reboot is recommended but not required."
-    echo ""
 
-    read -r -p "Reboot now? [y/N]: " reboot_choice
-
-    if [[ "$reboot_choice" =~ ^[Yy] ]]; then
-        # Setup resume
-        save_phase "VERIFY_FINAL"
-        if type setup_resume_system &>/dev/null; then
-            local script_path
-            script_path=$(readlink -f "${BASH_SOURCE[0]}")
-            setup_resume_system "$script_path" "VERIFY_FINAL"
-        fi
-
-        log_info "Rebooting..."
-        sudo reboot
-    else
-        advance_phase
-    fi
+    # Skip the optional reboot - just continue
+    # The system was already rebooted in phase 3, no need to reboot again
+    log_info "Skipping optional reboot - continuing to final verification..."
+    advance_phase
 
     return 0
 }
@@ -554,18 +647,30 @@ phase_apps_ready() {
     echo "========================================"
     echo ""
     echo "Your system has been optimized and"
-    echo "package managers are installed."
+    echo "ALL package managers are installed:"
+    echo "  - Flatpak (with Flathub)"
+    echo "  - Snap"
+    echo "  - AppImage support"
     echo ""
-    echo "You can now use the main menu to:"
-    echo "  - Install applications"
-    echo "  - Configure additional settings"
-    echo "  - Manage system services"
+    echo "The main menu will load automatically."
     echo ""
 
-    # Cleanup resume system
+    # Cleanup ALL resume systems
+    log_info "Cleaning up resume systems..."
+
+    # Cleanup user-level autostart
     if type cleanup_resume_system &>/dev/null; then
-        cleanup_resume_system
+        cleanup_resume_system 2>/dev/null || true
     fi
+
+    # Cleanup system-level systemd service
+    if type mark_installation_complete &>/dev/null; then
+        mark_installation_complete 2>/dev/null || true
+    fi
+
+    # Remove any leftover autostart files
+    rm -f "${HOME}/.config/autostart/ultimate-linux-suite-resume.desktop" 2>/dev/null || true
+    rm -f "${HOME}/.config/systemd/user/ultimate-linux-suite-resume.service" 2>/dev/null || true
 
     advance_phase
     return 0
@@ -721,6 +826,11 @@ first_run_main() {
                 echo "Usage: $0 --phase PHASE_NAME"
             fi
             ;;
+        --force)
+            # Force run even if complete
+            reset_first_run
+            run_first_run
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTIONS]"
             echo ""
@@ -729,20 +839,17 @@ first_run_main() {
             echo "  --reset     Reset first-run state"
             echo "  --resume    Resume from current or specified phase"
             echo "  --phase X   Execute specific phase"
+            echo "  --force     Force run even if already complete"
             echo "  --help      Show this help"
             echo ""
             echo "Without options, starts/continues the first-run experience."
             ;;
         *)
-            # Check if already complete
+            # Check if already complete - NO PROMPTS, just run or skip
             if is_first_run_complete; then
-                echo "First-run experience is already complete."
-                echo ""
-                read -r -p "Run again? [y/N]: " choice
-                if [[ "$choice" =~ ^[Yy] ]]; then
-                    reset_first_run
-                    run_first_run
-                fi
+                log_info "First-run experience is already complete."
+                log_info "Use --force to run again or --reset to start over."
+                return 0
             else
                 run_first_run
             fi

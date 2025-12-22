@@ -690,6 +690,68 @@ _parse_install_methods() {
     done
 }
 
+# Smart install - tries cascade, falls back to native if no definition
+# Usage: pkg_smart_install PACKAGE_NAME
+pkg_smart_install() {
+    local pkg_name="$1"
+
+    if [[ -z "$pkg_name" ]]; then
+        log_error "Usage: pkg_smart_install PACKAGE_NAME"
+        return 1
+    fi
+
+    # Check if already installed (command exists)
+    if command -v "$pkg_name" &>/dev/null; then
+        log_debug "$pkg_name already available"
+        return 0
+    fi
+
+    # Try cascade first if definition exists
+    if [[ -n "${APP_INSTALL_METHODS[$pkg_name]:-}" ]]; then
+        if pkg_cascade_install "$pkg_name"; then
+            return 0
+        fi
+    fi
+
+    # Auto-create native definition and try
+    if [[ -z "${APP_INSTALL_METHODS[$pkg_name]:-}" ]]; then
+        log_debug "No cascade definition for $pkg_name, trying native install"
+        APP_INSTALL_METHODS["$pkg_name"]="native:$pkg_name"
+    fi
+
+    # Try native package manager directly
+    if type pkg_install &>/dev/null; then
+        if pkg_install "$pkg_name" 2>/dev/null; then
+            log_success "Installed $pkg_name via native package manager"
+            return 0
+        fi
+    fi
+
+    # Try flatpak if available
+    if type flatpak_available &>/dev/null && flatpak_available; then
+        # Search for package in flathub
+        local flatpak_id
+        flatpak_id=$(flatpak search "$pkg_name" 2>/dev/null | head -1 | awk '{print $1}')
+        if [[ -n "$flatpak_id" ]]; then
+            if flatpak install -y flathub "$flatpak_id" 2>/dev/null; then
+                log_success "Installed $pkg_name via Flatpak ($flatpak_id)"
+                return 0
+            fi
+        fi
+    fi
+
+    # Try snap if available
+    if type snap_available &>/dev/null && snap_available; then
+        if snap install "$pkg_name" 2>/dev/null; then
+            log_success "Installed $pkg_name via Snap"
+            return 0
+        fi
+    fi
+
+    log_warn "Could not install $pkg_name via any method"
+    return 1
+}
+
 # Main cascade installation function
 # Usage: pkg_cascade_install APP_ID [PREFERRED_METHOD]
 pkg_cascade_install() {
@@ -712,9 +774,10 @@ pkg_cascade_install() {
     # Get installation methods for this app
     local method_string="${APP_INSTALL_METHODS[$app_id]:-}"
     if [[ -z "$method_string" ]]; then
-        log_error "No installation methods defined for: $app_id"
-        log_info "Define methods using: APP_INSTALL_METHODS[$app_id]=\"native:pkg|flatpak:id|...\""
-        return 1
+        # Auto-create native definition for unknown packages
+        log_debug "No definition for $app_id, creating native:$app_id"
+        APP_INSTALL_METHODS["$app_id"]="native:$app_id"
+        method_string="native:$app_id"
     fi
 
     # Parse methods
@@ -906,6 +969,86 @@ declare -gA APP_DEFINITIONS=(
     # Terminals
     [kitty]="native:kitty|flatpak:io.github.KittyTerminal|snap:kitty"
     [alacritty]="native:alacritty|flatpak:io.alacritty.Alacritty|snap:alacritty:--classic"
+
+    # =========================================================================
+    # CLI Utilities - Essential system tools
+    # =========================================================================
+
+    # Core utilities (native-only, always available)
+    [curl]="native:curl"
+    [wget]="native:wget"
+    [git]="native:git"
+    [vim]="native:vim"
+    [nano]="native:nano"
+    [htop]="native:htop"
+    [tree]="native:tree"
+    [jq]="native:jq"
+    [rsync]="native:rsync"
+    [tmux]="native:tmux"
+    [unzip]="native:unzip"
+    [tar]="native:tar"
+    [gzip]="native:gzip"
+    [bzip2]="native:bzip2"
+    [xz]="native:xz-utils"
+    [zip]="native:zip"
+    [p7zip]="native:p7zip"
+    [make]="native:make"
+    [cmake]="native:cmake"
+    [gcc]="native:gcc"
+    [g++]="native:g++"
+    [clang]="native:clang"
+    [python3]="native:python3"
+    [pip]="native:python3-pip"
+    [nodejs]="native:nodejs"
+    [npm]="native:npm"
+
+    # Modern CLI replacements (try native first, then snap/cargo)
+    [fd]="native:fd-find|snap:fd"
+    [fd-find]="native:fd-find|snap:fd"
+    [ripgrep]="native:ripgrep|snap:ripgrep:--classic"
+    [rg]="native:ripgrep|snap:ripgrep:--classic"
+    [bat]="native:bat|snap:batcat"
+    [batcat]="native:bat|snap:batcat"
+    [eza]="native:eza"
+    [exa]="native:exa"
+    [fzf]="native:fzf|snap:fzf:--classic"
+    [zoxide]="native:zoxide"
+    [dust]="native:dust"
+    [duf]="native:duf"
+    [procs]="native:procs"
+    [bottom]="native:bottom"
+    [btop]="native:btop"
+    [delta]="native:git-delta"
+    [starship]="native:starship|snap:starship"
+    [tldr]="native:tldr|snap:tldr"
+    [ncdu]="native:ncdu"
+    [neofetch]="native:neofetch|snap:neofetch"
+    [fastfetch]="native:fastfetch"
+
+    # Network utilities
+    [nmap]="native:nmap|snap:nmap"
+    [netcat]="native:netcat"
+    [socat]="native:socat"
+    [tcpdump]="native:tcpdump"
+    [mtr]="native:mtr"
+    [iperf3]="native:iperf3"
+    [httpie]="native:httpie|snap:httpie"
+    [aria2]="native:aria2"
+
+    # System utilities
+    [lsof]="native:lsof"
+    [strace]="native:strace"
+    [iotop]="native:iotop"
+    [iftop]="native:iftop"
+    [nethogs]="native:nethogs"
+    [sysstat]="native:sysstat"
+    [glances]="native:glances|snap:glances"
+
+    # Development utilities
+    [neovim]="native:neovim|flatpak:io.neovim.nvim|snap:nvim:--classic"
+    [nvim]="native:neovim|flatpak:io.neovim.nvim|snap:nvim:--classic"
+    [shellcheck]="native:shellcheck|snap:shellcheck"
+    [shfmt]="native:shfmt|snap:shfmt"
 )
 
 # Load application definitions into APP_INSTALL_METHODS
