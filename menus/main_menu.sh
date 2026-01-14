@@ -1,117 +1,213 @@
 #!/usr/bin/env bash
-#
-# main_menu.sh - Main Menu for Ultimate Linux Suite
-#
-# Note: set options inherited from suite.sh - do not set here
+# Unified Suite - Main Menu
+# License: GPL-3.0-or-later
 
-# Prevent multiple sourcing
-[[ -n "${_MAIN_MENU_LOADED:-}" ]] && return 0
-readonly _MAIN_MENU_LOADED=1
+[[ -n "${_MENU_MAIN_LOADED:-}" ]] && return 0
+readonly _MENU_MAIN_LOADED=1
 
-# Show system information
-show_system_info() {
-    log_section "System Information"
-
-    printf "Operating System:\n"
-    print_os_info
-    printf "\n"
-
-    printf "Hardware:\n"
-    print_hardware_summary
-    printf "\n"
-
-    printf "Form Factor: %s\n" "$(get_form_factor)"
-
-    pause
-}
-
-# Show welcome screen
-show_welcome() {
-    clear_screen
-    printf "\n"
-    center_text "╔══════════════════════════════════════════╗"
-    center_text "║     ULTIMATE LINUX SUITE v$SUITE_VERSION       ║"
-    center_text "╚══════════════════════════════════════════╝"
-    printf "\n"
-
-    center_text "System: ${OS_PRETTY:-$OS_ID}"
-    center_text "CPU: $CPU_MODEL"
-    center_text "RAM: ${RAM_TOTAL_GB}GB | GPU: $GPU_VENDOR"
-    printf "\n"
-    log_divider
-    printf "\n"
-}
-
-# Main menu loop
-run_main_menu() {
+# Main menu function
+main_menu() {
     while true; do
-        show_welcome
+        local choice=""
 
-        # Show queue count if not empty
-        local queue_count
-        queue_count=$(queue_count)
-        local queue_label=""
-        [[ "$queue_count" -gt 0 ]] && queue_label=" ($queue_count pending)"
+        if tui_available; then
+            choice=$(tui_menu "Unified Suite - Main Menu" \
+                "optimize" "System Optimization" \
+                "profile" "Apply Optimization Profile" \
+                "apps" "Application Installer" \
+                "hardware" "Hardware Information" \
+                "macbook" "MacBook Support" \
+                "security" "Security Lab" \
+                "pentest" "Pentest Tools" \
+                "bootstrap" "System Bootstrap" \
+                "update" "System Update" \
+                "snapshot" "Snapshot Management" \
+                "status" "System Status" \
+                "health" "Health Check" \
+                "quit" "Exit")
+        else
+            echo ""
+            echo "Unified Suite - Main Menu"
+            echo "========================="
+            echo ""
+            echo "  1) System Optimization"
+            echo "  2) Apply Optimization Profile"
+            echo "  3) Application Installer"
+            echo "  4) Hardware Information"
+            echo "  5) MacBook Support"
+            echo "  6) Security Lab"
+            echo "  7) Pentest Tools"
+            echo "  8) System Bootstrap"
+            echo "  9) System Update"
+            echo " 10) Snapshot Management"
+            echo " 11) System Status"
+            echo " 12) Health Check"
+            echo "  q) Exit"
+            echo ""
+            read -rp "Select: " num
 
-        printf "  1) Applications      - Install software packages\n"
-        printf "  2) Drivers           - GPU, WiFi, and hardware drivers\n"
-        printf "  3) Optimization      - System performance tuning\n"
-        printf "  4) Recovery          - Repair and maintenance tools\n"
-        printf "  5) Services          - Manage system services\n"
-        printf "  6) Firewall          - Manage firewall rules\n"
-        printf "  7) Profiles          - Quick setup profiles\n"
-        printf "  8) Queue%s   - View/execute pending actions\n" "$queue_label"
-        printf "  9) System Info       - View hardware details\n"
-        printf "  0) Exit\n"
-        printf "\n"
-        printf "Enter choice: "
-        read -r choice
+            case "$num" in
+                1)  choice="optimize" ;;
+                2)  choice="profile" ;;
+                3)  choice="apps" ;;
+                4)  choice="hardware" ;;
+                5)  choice="macbook" ;;
+                6)  choice="security" ;;
+                7)  choice="pentest" ;;
+                8)  choice="bootstrap" ;;
+                9)  choice="update" ;;
+                10) choice="snapshot" ;;
+                11) choice="status" ;;
+                12) choice="health" ;;
+                q|Q|quit|exit) choice="quit" ;;
+            esac
+        fi
 
         case "$choice" in
-            1)
-                apps_main
+            optimize)
+                source "$SUITE_ROOT/modules/optimization/ram_optimizer.sh"
+                ram_optimize_interactive
                 ;;
-            2)
-                drivers_main
+            profile)
+                source "$SUITE_ROOT/modules/optimization/profiles.sh"
+                select_profile_interactive
                 ;;
-            3)
-                optimize_main
+            apps)
+                source "$SUITE_ROOT/modules/apps/app_installer.sh"
+                app_installer_menu
                 ;;
-            4)
-                recovery_main
+            hardware)
+                print_hardware_info
+                read -rp "Press Enter to continue..."
                 ;;
-            5)
-                services_main
-                ;;
-            6)
-                firewall_main
-                ;;
-            7)
-                profiles_main
-                ;;
-            8)
-                queue_menu
-                ;;
-            9)
-                show_system_info
-                ;;
-            0|q|Q|exit)
-                # Check for pending queue items
-                if ! queue_is_empty; then
-                    log_warn "You have $(queue_count) pending actions in the queue"
-                    if confirm "Execute queue before exit?"; then
-                        queue_execute
-                    elif ! confirm "Discard queued actions and exit?"; then
-                        continue
-                    fi
+            macbook)
+                if is_macbook; then
+                    print_macbook_info
+                else
+                    log_warn "This system is not a MacBook"
                 fi
-                log_info "Thank you for using $SUITE_NAME"
-                exit 0
+                read -rp "Press Enter to continue..."
                 ;;
-            *)
-                log_warn "Invalid choice: $choice"
-                sleep 1
+            security)
+                source "$SUITE_ROOT/modules/security/lab_setup.sh" 2>/dev/null || true
+                if declare -F security_lab_menu &>/dev/null; then
+                    security_lab_menu
+                else
+                    log_info "Security lab features require root privileges"
+                fi
+                ;;
+            pentest)
+                source "$SUITE_ROOT/modules/pentest/tools_installer.sh" 2>/dev/null || true
+                if declare -F pentest_tools_menu &>/dev/null; then
+                    pentest_tools_menu
+                else
+                    log_info "Pentest tools installer"
+                fi
+                ;;
+            bootstrap)
+                source "$SUITE_ROOT/modules/bootstrap/bootstrap.sh" 2>/dev/null || true
+                if declare -F bootstrap_menu &>/dev/null; then
+                    bootstrap_menu
+                else
+                    log_info "Bootstrap wizard"
+                fi
+                ;;
+            update)
+                log_info "Running system update..."
+                pkg_update
+                pkg_upgrade
+                log_success "Update complete"
+                read -rp "Press Enter to continue..."
+                ;;
+            snapshot)
+                snapshot_menu
+                ;;
+            status)
+                cmd_status
+                read -rp "Press Enter to continue..."
+                ;;
+            health)
+                system_health
+                read -rp "Press Enter to continue..."
+                ;;
+            quit|"")
+                log_info "Goodbye!"
+                exit 0
                 ;;
         esac
     done
+}
+
+# Snapshot submenu
+snapshot_menu() {
+    while true; do
+        local choice=""
+
+        if tui_available; then
+            choice=$(tui_menu "Snapshot Management" \
+                "list" "List Snapshots" \
+                "create" "Create Snapshot" \
+                "delete" "Delete Snapshot" \
+                "restore" "Restore Snapshot" \
+                "back" "Back to Main Menu")
+        else
+            echo ""
+            echo "Snapshot Management"
+            echo "==================="
+            echo ""
+            echo "  1) List Snapshots"
+            echo "  2) Create Snapshot"
+            echo "  3) Delete Snapshot"
+            echo "  4) Restore Snapshot"
+            echo "  b) Back"
+            echo ""
+            read -rp "Select: " num
+
+            case "$num" in
+                1) choice="list" ;;
+                2) choice="create" ;;
+                3) choice="delete" ;;
+                4) choice="restore" ;;
+                b|B|back) choice="back" ;;
+            esac
+        fi
+
+        case "$choice" in
+            list)
+                safety_list_snapshots
+                read -rp "Press Enter to continue..."
+                ;;
+            create)
+                read -rp "Snapshot name: " name
+                safety_checkpoint "${name:-manual}"
+                read -rp "Press Enter to continue..."
+                ;;
+            delete)
+                safety_list_snapshots
+                read -rp "Snapshot to delete: " name
+                [[ -n "$name" ]] && safety_delete_snapshot "$name"
+                read -rp "Press Enter to continue..."
+                ;;
+            restore)
+                safety_list_snapshots
+                read -rp "Snapshot to restore: " name
+                [[ -n "$name" ]] && safety_restore "$name"
+                read -rp "Press Enter to continue..."
+                ;;
+            back|"")
+                return
+                ;;
+        esac
+    done
+}
+
+# Stub for cmd_status (used by main_menu)
+cmd_status() {
+    log_section "System Information"
+    echo "OS: $OS_PRETTY_NAME"
+    echo "Kernel: $(uname -r)"
+    echo "RAM: $(get_total_ram_mb) MB ($(detect_ram_profile))"
+    echo "Swappiness: $(cat /proc/sys/vm/swappiness)"
+    echo ""
+    safety_list_snapshots
 }
