@@ -47,12 +47,17 @@ macbook_audio_install() {
     cd "$MACBOOK_AUDIO_DIR"
 
     # Check kernel version and select appropriate installer
-    local kernel_version=$(uname -r | cut -d. -f1-2 | tr -d '.')
+    # Using sort -V for proper version comparison
+    local current_kernel=$(uname -r | cut -d- -f1)
     local installer="install.cirrus.driver.sh"
 
-    if [[ $kernel_version -lt 617 ]]; then
-        installer="install.cirrus.driver.pre617.sh"
-        log_info "Using pre-6.17 installer"
+    # Check if current kernel is older than 6.17
+    if printf '%s\n' "6.17" "$current_kernel" | sort -V | head -n1 | grep -q "^${current_kernel}$"; then
+        # Current kernel sorts before 6.17, so it's older
+        if [[ "$current_kernel" != "6.17" ]]; then
+            installer="install.cirrus.driver.pre617.sh"
+            log_info "Using pre-6.17 installer for kernel $current_kernel"
+        fi
     fi
 
     # Run installer

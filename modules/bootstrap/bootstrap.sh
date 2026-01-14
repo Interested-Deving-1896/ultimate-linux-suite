@@ -213,7 +213,27 @@ bootstrap_capture() {
     local output="${1:-packages-$(date +%Y%m%d).txt}"
 
     log_info "Capturing installed packages to: $output"
-    pkg_capture "$output"
+
+    case "$PKG_MANAGER" in
+        apt)
+            dpkg --get-selections | awk '$2=="install" {print $1}' > "$output"
+            ;;
+        dnf|yum)
+            rpm -qa --qf '%{NAME}\n' | sort > "$output"
+            ;;
+        pacman)
+            pacman -Qqe > "$output"
+            ;;
+        zypper)
+            rpm -qa --qf '%{NAME}\n' | sort > "$output"
+            ;;
+        *)
+            log_error "Package capture not supported for: $PKG_MANAGER"
+            return 1
+            ;;
+    esac
+
+    log_success "Captured $(wc -l < "$output") packages to $output"
 }
 
 # Restore package list
@@ -230,7 +250,37 @@ bootstrap_restore() {
     # Create snapshot first
     safety_checkpoint "bootstrap-restore"
 
-    pkg_restore "$input"
+    # Read packages from file and install
+    local packages=()
+    while IFS= read -r pkg; do
+        [[ -n "$pkg" && ! "$pkg" =~ ^# ]] && packages+=("$pkg")
+    done < "$input"
+
+    if [[ ${#packages[@]} -eq 0 ]]; then
+        log_warn "No packages found in: $input"
+        return 0
+    fi
+
+    log_info "Installing ${#packages[@]} packages..."
+
+    case "$PKG_MANAGER" in
+        apt)
+            safe_exec apt-get install -y "${packages[@]}"
+            ;;
+        dnf)
+            safe_exec dnf install -y "${packages[@]}"
+            ;;
+        pacman)
+            safe_exec pacman -S --noconfirm --needed "${packages[@]}"
+            ;;
+        zypper)
+            safe_exec zypper install -y "${packages[@]}"
+            ;;
+        *)
+            log_error "Package restore not supported for: $PKG_MANAGER"
+            return 1
+            ;;
+    esac
 
     log_success "Package restore complete"
 }

@@ -167,11 +167,10 @@ save_user_setting() {
 
     init_user_settings
 
-    if grep -q "^${key}=" "$USER_SETTINGS_FILE" 2>/dev/null; then
-        sed -i "s|^${key}=.*|${key}=${value}|" "$USER_SETTINGS_FILE"
-    else
-        echo "${key}=${value}" >> "$USER_SETTINGS_FILE"
-    fi
+    # Safer approach: delete existing line and append new one
+    # This avoids issues with special characters in the value
+    sed -i "/^${key}=/d" "$USER_SETTINGS_FILE" 2>/dev/null || true
+    echo "${key}=${value}" >> "$USER_SETTINGS_FILE"
 
     log_debug "Saved user setting: $key=$value"
 }

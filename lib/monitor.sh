@@ -30,7 +30,8 @@ get_swap_usage_percent() {
 
 # Get CPU usage percentage
 get_cpu_usage_percent() {
-    top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8}'
+    # Use LC_ALL=C to ensure consistent output regardless of locale
+    LC_ALL=C top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8}'
 }
 
 # Get load average

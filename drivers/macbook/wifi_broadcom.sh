@@ -155,7 +155,13 @@ macbook_wifi_status() {
 
 # Scan for networks
 macbook_wifi_scan() {
-    local iface=$(ip link show | grep -oE "wlan[0-9]+|wlp[0-9]+s[0-9]+" | head -1)
+    # Use iw dev for more robust interface detection
+    local iface=$(iw dev 2>/dev/null | awk '$1=="Interface"{print $2; exit}')
+
+    # Fallback to ip link if iw not available
+    if [[ -z "$iface" ]]; then
+        iface=$(ip link show | grep -oE "wlan[0-9]+|wlp[0-9a-z]+s[0-9a-z]+" | head -1)
+    fi
 
     if [[ -z "$iface" ]]; then
         log_error "No WiFi interface found"
