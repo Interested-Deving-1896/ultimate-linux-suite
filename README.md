@@ -1,453 +1,365 @@
-# Ultimate Linux Suite
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-4.0.0-blue?style=for-the-badge" alt="Version"/>
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License"/>
+  <img src="https://img.shields.io/badge/Bash-4.0%2B-orange?style=for-the-badge" alt="Bash"/>
+  <img src="https://img.shields.io/badge/Platform-Linux-purple?style=for-the-badge" alt="Platform"/>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Bash](https://img.shields.io/badge/Bash-4.0%2B-green.svg)](https://www.gnu.org/software/bash/)
-[![Platform](https://img.shields.io/badge/Platform-Linux-orange.svg)](https://kernel.org)
+<h1 align="center">Unified Linux Suite</h1>
 
-A comprehensive, multi-distribution Linux system management toolkit. One script to rule them all.
+<p align="center">
+  <strong>Sovereign Optimization Protocol</strong><br/>
+  <em>A comprehensive Linux system management platform combining power, security, and simplicity</em>
+</p>
 
-## What's New in v3.0
+<p align="center">
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#features">Features</a> •
+  <a href="#commands">Commands</a> •
+  <a href="#modules">Modules</a> •
+  <a href="#supported-distributions">Distributions</a> •
+  <a href="#contributing">Contributing</a>
+</p>
 
-### Core Improvements
-- **First-Run Wizard** - Automated setup with multi-phase execution and reboot handling
-- **Modern TUI** - Beautiful Dracula-themed interface using gum/fzf with fallback to whiptail/dialog
-- **Cascade Installation** - Try native → Flatpak → Snap → AppImage automatically
-- **Smart Hardware Detection** - Deep system profiling with JSON output and optimization recommendations
+---
 
-### System Optimization
-- **System Tuning Engine** - Auto-optimized sysctl based on your hardware
-- **Blueprint Algorithms** - Scientific parameter selection (ZRAM sizing, swappiness, I/O schedulers)
-- **Multi-Stage Installation** - System-level systemd service for installations that survive reboots
+## What is This?
 
-### Developer Experience
-- **Package Checkpoints** - Snapshot and rollback your package state
-- **Utility Matrix** - Install modern CLI tools (ripgrep, bat, eza, etc.) easily
-- **Profile Aliases** - Automatic shell aliases for modern CLI tools in `/etc/profile.d/`
-- **Testing Framework** - Built-in test suite
-- **Navigation System** - Hierarchical menus with breadcrumb navigation
+**Unified Linux Suite** is the merger of two powerful projects:
+
+- **Ultimate Linux Suite** — A multi-distribution system management toolkit with modern TUI, cascade installation, and deep hardware optimization
+- **OffTrack Suite** — A security-focused toolkit with pentest tools, encrypted vaults, malware analysis labs, and MacBook hardware support
+
+The result is a single, comprehensive platform that handles everything from system optimization to security lab deployment—across 20+ Linux distributions.
+
+---
+
+## What's New in v4.0.0
+
+### The Unified Release
+
+This release merges two codebases into one cohesive toolkit:
+
+| Component | Origin | Description |
+|-----------|--------|-------------|
+| **Security Lab** | OffTrack | KVM setup, malware analysis, Windows VM deployment |
+| **Pentest Tools** | OffTrack | Metasploit, SQLMap, Nikto, Wifite, ExploitDB |
+| **Encrypted Vault** | OffTrack | LUKS-encrypted secure storage |
+| **MacBook Support** | OffTrack | Cirrus audio, Broadcom WiFi, SPI keyboard drivers |
+| **Firewall Manager** | OffTrack | UFW/firewalld/iptables unified interface |
+| **System Optimization** | Ultimate | CPU/RAM optimizers, performance profiles |
+| **Cascade Install** | Ultimate | Native → Flatpak → Snap → AppImage fallback |
+| **Modern TUI** | Ultimate | gum/fzf/whiptail with Dracula theme |
+| **Hardware Detection** | Ultimate | Deep scanning with JSON output |
+
+### New Entry Point
+
+```bash
+./unified.sh          # New unified entry point
+./ultimate.sh         # Legacy entry point (still works)
+```
+
+---
 
 ## Quick Start
 
 ```bash
+# Clone the repository
 git clone https://github.com/Nerds489/ultimate-linux-suite.git
 cd ultimate-linux-suite
-sudo ./ultimate.sh
+
+# Launch the interactive menu
+sudo ./unified.sh
+
+# Or run specific commands
+./unified.sh status              # System overview
+./unified.sh optimize            # Optimization wizard
+./unified.sh profile gaming      # Apply gaming profile
+./unified.sh pentest             # Pentest tools installer
+./unified.sh security            # Security lab menu
+./unified.sh macbook fix-all     # Fix MacBook hardware (if applicable)
 ```
 
-**That's it.** Clone and run - no build steps required.
+**That's it.** Clone and run—no build steps, no dependencies to install first.
 
-### First-Run Experience
+---
 
-New installations can use the automated first-run wizard:
+## Features
+
+### System Optimization
+
+| Feature | Description |
+|---------|-------------|
+| **RAM Optimizer** | Intelligent swappiness, cache pressure, ZRAM configuration |
+| **CPU Optimizer** | Governor selection, P-State tuning, boost control |
+| **Performance Profiles** | Gaming, Server, Laptop, Desktop, Balanced presets |
+| **I/O Scheduler** | Device-aware scheduler selection (none/mq-deadline/bfq) |
+| **Sysctl Tuning** | Auto-generated kernel parameters based on hardware |
+
+### Security & Pentest
+
+| Feature | Description |
+|---------|-------------|
+| **Pentest Tools** | One-click install: Metasploit, SQLMap, Nikto, Wifite, ExploitDB |
+| **Security Lab** | Isolated KVM environment for malware analysis |
+| **Windows VM** | Automated Windows VM deployment for testing |
+| **Encrypted Vault** | LUKS-encrypted storage for sensitive data |
+| **Firewall Manager** | Unified interface for ufw, firewalld, iptables |
+| **Voidwave Integration** | Advanced wireless security tools |
+
+### Hardware Support
+
+| Feature | Description |
+|---------|-------------|
+| **MacBook Detection** | Automatic identification of MacBook generation |
+| **Cirrus Audio** | Fix MacBook Pro audio with Cirrus Logic chips |
+| **Broadcom WiFi** | Configure Broadcom wireless on MacBooks |
+| **SPI Keyboard** | Apple SPI keyboard/trackpad driver installation |
+| **NVIDIA/AMD/Intel** | GPU driver management across distributions |
+| **VM Guest Tools** | VirtualBox, VMware, QEMU/KVM additions |
+
+### Package Management
+
+| Feature | Description |
+|---------|-------------|
+| **Cascade Installation** | Auto-fallback: Native → Flatpak → Snap → AppImage |
+| **60+ Applications** | Cross-distro package database with mappings |
+| **AUR Support** | Full Arch User Repository integration |
+| **Package Checkpoints** | Snapshot and rollback package state |
+| **Modern CLI Tools** | Install fd, ripgrep, bat, eza, btop, and more |
+
+### User Experience
+
+| Feature | Description |
+|---------|-------------|
+| **Modern TUI** | Beautiful interface with gum/fzf, Dracula theme |
+| **Dry-Run Mode** | Preview changes without applying them |
+| **Snapshot System** | Create restore points before changes |
+| **Breadcrumb Navigation** | Hierarchical menu system |
+| **JSON State** | Persistent state across sessions and reboots |
+
+---
+
+## Commands
+
+### Command Line Interface
+
+```
+unified.sh [OPTIONS] COMMAND [ARGS]
+
+Options:
+  -h, --help        Show help
+  -v, --version     Show version
+  -n, --dry-run     Simulate without making changes
+  -y, --yes         Auto-confirm all prompts
+  -d, --debug       Enable debug output
+  -q, --quiet       Suppress non-essential output
+
+Commands:
+  menu              Launch interactive TUI menu (default)
+  status            Show system status
+  health            Full system health report
+```
+
+### Optimization Commands
 
 ```bash
-./modules/first_run.sh
+./unified.sh optimize              # Run optimization wizard
+./unified.sh profile gaming        # Apply gaming profile
+./unified.sh profile server        # Apply server profile
+./unified.sh profile laptop        # Apply laptop profile
+./unified.sh ram                   # RAM optimization wizard
+./unified.sh cpu                   # CPU optimization wizard
 ```
 
-This wizard will:
-1. Scan your hardware
-2. Apply system optimizations
-3. Install package managers (Flatpak, Snap, Nix)
-4. Install essential utilities
-5. Handle reboots and resume automatically
-
-## Key Features
-
-### Core Features
-- **Queue-Based Operations** - Review all changes before execution
-- **Multi-Distro Support** - Works on 20+ distributions
-- **60+ Applications** - Curated app database with cross-distro package mapping
-- **Cascade Installation** - Automatically tries multiple install methods
-
-### System Management
-- **System Optimization** - ZRAM, swappiness, I/O schedulers, CPU governors
-- **Driver Management** - NVIDIA, AMD, Intel, Broadcom WiFi, VM guest tools
-- **Service Management** - Start, stop, enable, disable services (systemd/OpenRC)
-- **Firewall Management** - Unified interface for ufw, firewalld, and iptables
-
-### Recovery & Maintenance
-- **Package Checkpoints** - Save and restore package state
-- **Recovery Tools** - DNS reset, orphan cleanup, package repair, bootloader fix
-- **Health Checks** - Verify package manager and system health
-
-### Modern CLI Tools
-Install modern replacements for classic Unix tools:
-
-| Classic | Modern | Description |
-|---------|--------|-------------|
-| `find` | `fd` | User-friendly find alternative |
-| `grep` | `ripgrep` | Blazingly fast search |
-| `cat` | `bat` | Cat with syntax highlighting |
-| `ls` | `eza` | Modern ls with git integration |
-| `top` | `btop` | Beautiful resource monitor |
-| `du` | `dust` | Intuitive disk usage |
-
-## Installation
-
-### Option 1: Clone & Run (Recommended)
+### Security Commands
 
 ```bash
-git clone https://github.com/Nerds489/ultimate-linux-suite.git
-cd ultimate-linux-suite
-sudo ./ultimate.sh
+./unified.sh security              # Security lab menu
+./unified.sh pentest               # Pentest tools installer
+./unified.sh vault create          # Create encrypted vault
+./unified.sh vault open            # Open vault
+./unified.sh vault close           # Close vault
+./unified.sh firewall              # Firewall configuration
 ```
 
-### Option 2: System Install
+### Hardware Commands
 
 ```bash
-git clone https://github.com/Nerds489/ultimate-linux-suite.git
-cd ultimate-linux-suite
-sudo make install
-ultimate-linux-suite  # Run from anywhere
+./unified.sh hardware              # Show hardware info
+./unified.sh macbook status        # MacBook driver status
+./unified.sh macbook fix-all       # Fix all MacBook hardware
 ```
 
-## Module Reference
+### System Commands
+
+```bash
+./unified.sh apps                  # Application installer
+./unified.sh update                # Update system packages
+./unified.sh bootstrap             # System bootstrap wizard
+./unified.sh snapshot create NAME  # Create snapshot
+./unified.sh snapshot list         # List snapshots
+./unified.sh snapshot restore NAME # Restore snapshot
+```
+
+---
+
+## Modules
 
 ### Core Libraries (`lib/`)
 
 | Module | Description |
 |--------|-------------|
-| `logging.sh` | Multi-level logging with file output and colors |
+| `init.sh` | Suite initialization and library loading |
+| `core.sh` | Core functions and utilities |
+| `colors.sh` | Terminal color definitions (Dracula theme) |
+| `config.sh` | Configuration management |
+| `logging.sh` | Multi-level logging with file output |
 | `os_detect.sh` | OS/distro detection with family grouping |
-| `hardware_detect.sh` | CPU, GPU, RAM, disk, WiFi, battery detection |
-| `pkg.sh` | Package manager abstraction (apt/dnf/pacman/zypper/apk/xbps) |
-| `queue.sh` | Queue system for batched operations |
-| `menu.sh` | Interactive menu rendering |
+| `hardware.sh` | Hardware detection utilities |
+| `macbook_detect.sh` | MacBook generation identification |
+| `pkg.sh` | Package manager abstraction |
+| `tui.sh` | Modern TUI with multiple backends |
+| `safety.sh` | Snapshot and rollback system |
+| `deps.sh` | Dependency management |
+| `monitor.sh` | System monitoring functions |
+| `optimization.sh` | Optimization algorithms and helpers |
 
-### Advanced Libraries (`lib/`)
-
-| Module | Description |
-|--------|-------------|
-| `tui.sh` | Modern TUI with gum/fzf/whiptail backends |
-| `tui_advanced.sh` | Complex UI components (wizards, multi-select) |
-| `scan.sh` | Deep hardware scanning with JSON output |
-| `tune.sh` | Sysctl configuration generator |
-| `state.sh` | JSON-based state management with locking |
-| `error_handling.sh` | Robust error handling and recovery |
-
-### Package Management (`lib/`)
+### Optimization Modules (`modules/optimization/`)
 
 | Module | Description |
 |--------|-------------|
-| `pkg_cascade.sh` | Cascade installation (native→flatpak→snap→appimage) |
-| `pkg_universal.sh` | Install Flatpak, Snap, Nix, Homebrew, AUR helpers |
-| `pkg_aur.sh` | Complete AUR support for Arch-based systems |
-| `pkg_verify.sh` | Package verification, health checks, checkpoints |
-| `utilities.sh` | Utility installation matrix (modern CLI tools) |
+| `ram_optimizer.sh` | Memory optimization (swappiness, cache, ZRAM) |
+| `cpu_optimizer.sh` | CPU frequency and governor management |
+| `profiles.sh` | Performance profile definitions and application |
 
-### System Optimization (`lib/`)
+### Security Modules (`modules/security/`)
 
 | Module | Description |
 |--------|-------------|
-| `zram.sh` | ZRAM compressed swap configuration |
-| `cpu_governor.sh` | CPU frequency scaling management |
-| `io_scheduler.sh` | I/O scheduler optimization |
-| `autostart.sh` | Autostart and multi-phase resume system |
-| `systemd_service.sh` | System-level systemd service for multi-stage install |
-| `profile_aliases.sh` | Modern CLI tool alias management |
+| `firewall.sh` | Unified firewall management (ufw/firewalld/iptables) |
+| `vault.sh` | LUKS-encrypted vault creation and management |
+| `lab_setup.sh` | Security lab environment configuration |
+| `kvm_setup.sh` | KVM virtualization setup for isolated testing |
+| `malware_lab.sh` | Malware analysis environment |
+| `windows_vm.sh` | Automated Windows VM deployment |
 
-### Feature Modules (`modules/`)
+### Pentest Modules (`modules/pentest/`)
 
 | Module | Description |
 |--------|-------------|
-| `apps.sh` | Application installer with categories |
-| `drivers.sh` | GPU, WiFi, and VM guest driver management |
-| `optimize.sh` | System optimization with profiles |
-| `recovery.sh` | System recovery and repair tools |
-| `services.sh` | Service management (systemd/OpenRC) |
-| `firewall.sh` | Firewall management (ufw/firewalld/iptables) |
-| `setup_profiles.sh` | Quick setup profiles |
-| `first_run.sh` | First-run wizard with multi-phase execution |
+| `tools_installer.sh` | Bulk pentest tool installation |
+| `voidwave.sh` | Voidwave wireless security integration |
+| `individual/` | Individual tool installers |
 
-## Cascade Installation System
+**Individual Tools:**
+- `metasploit.sh` — Metasploit Framework
+- `sqlmap.sh` — SQL injection automation
+- `nikto.sh` — Web server scanner
+- `wifite.sh` — Wireless attack automation
+- `exploitdb.sh` — Exploit database search
 
-When you install an app, the cascade system tries multiple methods:
+### Application Modules (`modules/apps/`)
+
+| Module | Description |
+|--------|-------------|
+| `app_installer.sh` | Category-based application installer |
+
+### Bootstrap & Installer Modules (`modules/bootstrap/`, `modules/installers/`)
+
+| Module | Description |
+|--------|-------------|
+| `bootstrap.sh` | Full system bootstrap wizard |
+| `arch_guided.sh` | Guided Arch Linux installation |
+| `mint_recovery.sh` | Linux Mint recovery tools |
+| `parrot_lab.sh` | Parrot OS lab setup |
+| `disk_partition.sh` | Disk partitioning utilities |
+
+### Hardware Drivers (`drivers/`)
+
+| Directory | Description |
+|-----------|-------------|
+| `macbook/` | MacBook-specific drivers and fixes |
+| `nvidia/` | NVIDIA GPU drivers |
+| `amd/` | AMD GPU drivers |
+| `intel/` | Intel GPU drivers |
+| `broadcom/` | Broadcom WiFi drivers |
+| `realtek-*/` | Realtek WiFi and Ethernet drivers |
+
+**MacBook Drivers:**
+- `audio_cirrus.sh` — Cirrus Logic audio driver
+- `wifi_broadcom.sh` — Broadcom WiFi configuration
+- `spi_driver.sh` — Apple SPI keyboard/trackpad
+- `fix_all.sh` — Run all MacBook fixes
+
+---
+
+## Project Structure
 
 ```
-1. Native package (apt/dnf/pacman/etc.)
-   ↓ if not available
-2. Flatpak from Flathub
-   ↓ if not available
-3. Snap from Snapcraft
-   ↓ if not available
-4. AppImage download
-   ↓ if not available
-5. Build from source
+ultimate-linux-suite/
+├── unified.sh               # New unified entry point
+├── ultimate.sh              # Legacy entry point
+├── suite.sh -> ultimate.sh  # Symlink for compatibility
+├── VERSION                  # Version file (4.0.0)
+├── LICENSE                  # GPL-3.0 License
+├── Makefile                 # Build & install targets
+│
+├── lib/                     # Core libraries
+│   ├── init.sh              # Initialization
+│   ├── core.sh              # Core functions
+│   ├── colors.sh            # Color definitions
+│   ├── config.sh            # Configuration
+│   ├── logging.sh           # Logging system
+│   ├── os_detect.sh         # OS detection
+│   ├── hardware.sh          # Hardware utilities
+│   ├── macbook_detect.sh    # MacBook detection
+│   ├── pkg.sh               # Package management
+│   ├── tui.sh               # Terminal UI
+│   ├── safety.sh            # Snapshots/rollback
+│   ├── deps.sh              # Dependencies
+│   ├── monitor.sh           # System monitoring
+│   ├── optimization.sh      # Optimization helpers
+│   └── ...                  # Additional libraries
+│
+├── modules/                 # Feature modules
+│   ├── optimization/        # CPU, RAM, profiles
+│   ├── security/            # Firewall, vault, labs
+│   ├── pentest/             # Security tools
+│   │   └── individual/      # Individual installers
+│   ├── apps/                # Application installer
+│   ├── bootstrap/           # System bootstrap
+│   └── installers/          # Distro installers
+│
+├── drivers/                 # Hardware drivers
+│   ├── macbook/             # MacBook support
+│   ├── nvidia/              # NVIDIA GPU
+│   ├── amd/                 # AMD GPU
+│   └── ...                  # Other drivers
+│
+├── menus/                   # Menu definitions
+│   ├── main_menu.sh         # Main navigation
+│   ├── apps_menu.sh         # Applications
+│   ├── optimize_menu.sh     # Optimization
+│   ├── drivers_menu.sh      # Drivers
+│   └── recovery_menu.sh     # Recovery
+│
+├── scripts/                 # Utility scripts
+│   ├── askpass_setup.sh     # SSH askpass config
+│   └── update-all.sh        # System update script
+│
+├── tests/                   # Test suite
+│   ├── framework.sh         # Test framework
+│   ├── run_all_tests.sh     # Test runner
+│   └── test_*.sh            # Test files
+│
+├── apps/                    # Application database
+├── backends/                # Distro-specific mappings
+├── configs/                 # Configuration files
+└── docs/                    # Documentation
 ```
 
-### Usage
-
-```bash
-# Source the module
-source lib/pkg_cascade.sh
-
-# Install with automatic method selection
-cascade_install firefox
-
-# Install with specific method preference
-cascade_install_with_method discord flatpak
-
-# Batch install
-cascade_batch_install firefox vlc gimp
-```
-
-## Package Checkpoints
-
-Save your package state and roll back if needed:
-
-```bash
-source lib/pkg_verify.sh
-
-# Create a checkpoint before making changes
-pkg_checkpoint_create "before-gaming-setup"
-
-# List available checkpoints
-pkg_checkpoint_list
-
-# See what changed since checkpoint
-pkg_checkpoint_diff "before-gaming-setup"
-
-# Roll back to checkpoint (dry run)
-pkg_checkpoint_rollback "before-gaming-setup"
-
-# Roll back for real
-pkg_checkpoint_rollback "before-gaming-setup" 0
-```
-
-## Utility Installation
-
-Install modern CLI tools by category:
-
-```bash
-source lib/utilities.sh
-
-# Install essential utilities
-util_install_essentials
-
-# Install developer tools
-util_install_developer
-
-# Install sysadmin tools
-util_install_sysadmin
-
-# Install modern CLI replacements
-util_install_modern_cli
-
-# Install Rust-based tools (auto-installs Rust if needed)
-util_install_rust_tools
-
-# Install specific utility
-util_install ripgrep
-
-# Check what's installed
-util_status
-```
-
-### Available Categories
-
-| Category | Tools |
-|----------|-------|
-| `essential` | curl, wget, git, vim, htop, tree, fzf, jq, rsync, tmux |
-| `modern-cli` | htop, btop, ncdu, fd, ripgrep, bat, eza, fzf, jq, yq, tldr |
-| `developer` | git, vim, neovim, make, cmake, jq, fd, ripgrep, bat, fzf, tmux |
-| `sysadmin` | htop, iotop, lsof, strace, nmap, tcpdump, rsync, tmux |
-| `rust-tools` | fd, ripgrep, bat, eza, dust, procs, bottom, zoxide, starship, delta |
-| `network` | nmap, netcat, socat, tcpdump, mtr, iperf3, httpie |
-| `compression` | tar, gzip, bzip2, xz, zip, 7z, zstd, pigz |
-
-## Hardware Scanning
-
-Deep hardware detection with JSON output:
-
-```bash
-source lib/scan.sh
-
-# Get CPU info as JSON
-detect_cpu
-
-# Get full hardware scan
-perform_full_scan
-
-# Output saved to: ~/.local/state/ultimate-suite/hardware_scan.json
-
-# Save hardware profile with optimization recommendations
-save_hardware_profile
-
-# Print optimization recommendations
-print_optimization_recommendations
-```
-
-## Optimization Algorithms
-
-The suite uses research-backed algorithms for automatic optimization:
-
-| Parameter | Algorithm | Rationale |
-|-----------|-----------|-----------|
-| **ZRAM Size** | `min(RAM/2, 8GB)` | Conservative sizing prevents over-commitment |
-| **Swappiness** | RAM < 8GB: 60; 8-16GB: 40; 32GB+: 10-20 | Balances RAM utilization with swap overhead |
-| **Swappiness (ZRAM)** | 100-180 based on RAM | Higher values since ZRAM is faster than disk |
-| **I/O Scheduler** | NVMe → `none`, SSD → `mq-deadline`, HDD → `bfq` | Matches scheduler complexity to device needs |
-| **CPU Governor** | Desktop: `performance`, Laptop: `schedutil` | Optimizes for use case expectations |
-
-```bash
-source lib/scan.sh
-
-# Generate recommendations based on your hardware
-generate_optimization_recommendations
-```
-
-## Profile Aliases
-
-Install modern CLI tool aliases system-wide or per-user:
-
-```bash
-source lib/profile_aliases.sh
-
-# Install aliases (auto-detects root vs user)
-install_aliases
-
-# Or explicitly choose level
-install_system_aliases  # Requires root, installs to /etc/profile.d/
-install_user_aliases    # User level, updates ~/.bashrc
-
-# Show status
-show_alias_status
-
-# List available aliases
-list_aliases
-```
-
-Installed aliases (when tools are available):
-- `ls` → `eza --icons --group-directories-first`
-- `cat` → `bat --style=plain`
-- `grep` → `rg --color=auto`
-- `du` → `dust`
-- `top` → `btop`
-- `help` → `tldr`
-
-## Multi-Stage Installation
-
-For installations that require reboots, use the systemd service:
-
-```bash
-source lib/systemd_service.sh
-
-# Setup multi-stage installation (requires root)
-sudo setup_multi_stage_installation /path/to/ultimate-linux-suite
-
-# Check status
-show_system_service_status
-
-# Mark installation complete (disables service)
-sudo mark_installation_complete
-
-# Reset to run again
-sudo reset_installation_state
-```
-
-The service uses a state machine in `/var/lib/linux-suite/state.json` with:
-- Automatic retry (up to 3 attempts per stage)
-- Boot ID tracking for reboot detection
-- Completion flag to prevent re-running
-
-## System Tuning
-
-Generate optimized sysctl configuration:
-
-```bash
-source lib/tune.sh
-
-# Generate configuration for your hardware
-tune_generate_sysctl balanced
-
-# Available profiles: minimal, balanced, performance, gaming, server
-
-# Apply the configuration
-tune_apply
-
-# Restore from backup
-tune_restore
-```
-
-## TUI System
-
-The suite uses a modern TUI with automatic backend selection:
-
-**Priority:** gum → fzf → whiptail → dialog → basic
-
-```bash
-source lib/tui.sh
-
-# Show a menu
-tui_menu "Choose an option" "Option 1" "Option 2" "Option 3"
-
-# Show a checklist
-tui_checklist "Select items" "Item 1" "Item 2" "Item 3"
-
-# Get user input
-result=$(tui_input "Enter your name")
-
-# Show confirmation
-tui_confirm "Are you sure?" && echo "Yes" || echo "No"
-
-# Show a spinner while working
-long_running_command &
-tui_spinner $! "Processing..."
-```
-
-## State Management
-
-Track state across sessions and reboots:
-
-```bash
-source lib/state.sh
-
-# Initialize state system
-init_state_system
-
-# Update state
-update_state '.phase.current = 2 | .phase.name = "OPTIMIZE"'
-
-# Query state
-current_phase=$(get_state '.phase.name')
-
-# Record events
-record_event "package_installed" '{"name": "firefox", "method": "native"}'
-```
-
-## First-Run Wizard
-
-The first-run wizard provides an automated setup experience:
-
-```bash
-# Run the wizard
-./modules/first_run.sh
-
-# Check status
-./modules/first_run.sh --status
-
-# Reset and start over
-./modules/first_run.sh --reset
-
-# Resume from specific phase
-./modules/first_run.sh --resume SCAN
-```
-
-### Phases
-
-| Phase | Description |
-|-------|-------------|
-| INIT | Check prerequisites and display welcome |
-| SCAN | Hardware and system detection |
-| OPTIMIZE | Apply system optimizations |
-| REBOOT_REQUIRED | Prompt for reboot (auto-resume after) |
-| VERIFY | Post-reboot verification |
-| PKG_MANAGERS | Install Flatpak, Snap, Nix |
-| UTILITIES | Install essential utilities |
-| REBOOT_OPTIONAL | Offer optional reboot |
-| VERIFY_FINAL | Final system verification |
-| APPS_READY | Ready for application installation |
-| COMPLETE | First-run complete |
+---
 
 ## Supported Distributions
 
@@ -464,198 +376,255 @@ The first-run wizard provides an automated setup experience:
 
 Unknown distributions fall back to generic mode with basic functionality.
 
-## Project Structure
+---
 
-```
-ultimate-linux-suite/
-├── ultimate.sh              # Main entry point
-├── Makefile                 # Build & install targets
-│
-├── lib/                     # Core libraries
-│   ├── logging.sh           # Multi-level logging with file output
-│   ├── os_detect.sh         # OS/distro detection
-│   ├── hardware_detect.sh   # Hardware detection
-│   ├── pkg.sh               # Package manager abstraction
-│   ├── queue.sh             # Queue system
-│   ├── menu.sh              # Interactive menus
-│   ├── utils.sh             # Utility functions
-│   ├── error_handling.sh    # Error handling and recovery
-│   │
-│   ├── tui.sh               # Modern TUI (gum/fzf/whiptail) - Dracula theme
-│   ├── tui_advanced.sh      # Advanced UI + navigation/breadcrumbs
-│   │
-│   ├── scan.sh              # Deep hardware scanning + optimization recs
-│   ├── tune.sh              # Sysctl configuration generator
-│   ├── state.sh             # State management (root/user paths)
-│   ├── state_advanced.sh    # Advanced state features
-│   │
-│   ├── pkg_cascade.sh       # Cascade installation system
-│   ├── pkg_universal.sh     # Universal package managers
-│   ├── pkg_aur.sh           # AUR support for Arch
-│   ├── pkg_verify.sh        # Package verification & checkpoints
-│   ├── utilities.sh         # Utility installation matrix
-│   │
-│   ├── zram.sh              # ZRAM configuration (zram-generator)
-│   ├── cpu_governor.sh      # CPU governor management
-│   ├── io_scheduler.sh      # I/O scheduler optimization
-│   ├── autostart.sh         # Autostart management
-│   ├── systemd_service.sh   # System-level systemd service
-│   └── profile_aliases.sh   # Modern CLI alias management
-│
-├── modules/                 # Feature modules
-│   ├── apps.sh              # Application installer
-│   ├── drivers.sh           # Driver management
-│   ├── optimize.sh          # System optimization
-│   ├── recovery.sh          # Recovery tools
-│   ├── services.sh          # Service management
-│   ├── firewall.sh          # Firewall management
-│   ├── setup_profiles.sh    # Quick setup profiles
-│   └── first_run.sh         # First-run wizard
-│
-├── tests/                   # Testing framework
-│   ├── framework.sh         # Test framework
-│   └── test_*.sh            # Test files
-│
-├── apps/                    # Application database
-│   └── database.sh          # 60+ app definitions
-│
-├── backends/                # Distro-specific mappings
-│   ├── debian.sh, ubuntu.sh, mint.sh
-│   ├── fedora.sh, arch.sh, opensuse.sh
-│   └── kali.sh, parrot.sh, generic.sh
-│
-├── configs/                 # Configuration files
-│   ├── optimization_profiles.conf
-│   ├── modern-cli.sh        # Profile.d alias template
-│   └── app_presets/
-│
-├── menus/                   # Menu definitions
-│   ├── main_menu.sh
-│   ├── apps_menu.sh
-│   ├── drivers_menu.sh
-│   ├── optimize_menu.sh
-│   └── recovery_menu.sh
-│
-├── drivers/                 # Hardware driver scripts
-│   ├── amd/, nvidia/, intel/
-│   ├── broadcom/, realtek-*/
-│   └── README.md
-│
-└── docs/                    # Documentation
-    └── *.md
-```
+## Installation Methods
 
-## Testing
-
-Run the test suite:
+### Option 1: Clone & Run (Recommended)
 
 ```bash
-# Run all tests
-./tests/framework.sh
-
-# Run specific test file
-source tests/framework.sh
-run_tests tests/test_logging.sh
-
-# Run test suite
-run_test_suite tests/
+git clone https://github.com/Nerds489/ultimate-linux-suite.git
+cd ultimate-linux-suite
+sudo ./unified.sh
 ```
 
-### Writing Tests
+### Option 2: System Install
 
 ```bash
-#!/usr/bin/env bash
-source tests/framework.sh
-
-TEST_SUITE_NAME="My Tests"
-
-test_example() {
-    assert_equals "expected" "actual" "Values should match"
-    assert_true "1" "Should be truthy"
-    assert_file_exists "/etc/passwd" "File should exist"
-    assert_command_exists "bash" "Bash should be available"
-}
-
-run_tests
+git clone https://github.com/Nerds489/ultimate-linux-suite.git
+cd ultimate-linux-suite
+sudo make install
+unified-linux-suite  # Run from anywhere
 ```
 
-## Command Line Options
+### Option 3: One-Liner
 
 ```bash
-sudo ./ultimate.sh              # Interactive menu
-./ultimate.sh --help            # Show help
-./ultimate.sh --version         # Show version
-sudo ./ultimate.sh --debug      # Enable debug output
-./ultimate.sh --non-interactive # CI/testing mode
+curl -fsSL https://raw.githubusercontent.com/Nerds489/ultimate-linux-suite/main/unified.sh | sudo bash
 ```
+
+---
+
+## Examples
+
+### Optimize a Gaming System
+
+```bash
+# Apply gaming profile (performance governor, optimized swappiness)
+sudo ./unified.sh profile gaming
+
+# Or use the interactive wizard
+sudo ./unified.sh optimize
+```
+
+### Set Up a Security Lab
+
+```bash
+# Launch security lab menu
+sudo ./unified.sh security
+
+# Install KVM and create isolated environment
+# Deploy Windows VM for malware testing
+# Configure network isolation
+```
+
+### Install Pentest Tools
+
+```bash
+# Install common pentest tools
+sudo ./unified.sh pentest
+
+# Individual tools available:
+# - Metasploit Framework
+# - SQLMap
+# - Nikto
+# - Wifite
+# - ExploitDB
+```
+
+### Fix MacBook Hardware
+
+```bash
+# Check if running on MacBook
+./unified.sh macbook status
+
+# Fix all hardware issues (audio, wifi, keyboard)
+sudo ./unified.sh macbook fix-all
+```
+
+### Create Encrypted Vault
+
+```bash
+# Create a new encrypted vault
+sudo ./unified.sh vault create
+
+# Open existing vault
+sudo ./unified.sh vault open
+
+# Check vault status
+./unified.sh vault status
+```
+
+### Manage Firewall
+
+```bash
+# Open firewall menu
+sudo ./unified.sh firewall
+
+# Works with ufw, firewalld, or iptables
+# Automatically detects installed firewall
+```
+
+---
 
 ## Requirements
 
-**Required:**
-- Bash 4.0+ (standard on all modern Linux)
+### Required
+- Bash 4.0+ (standard on all modern Linux distributions)
 - Root/sudo access for system modifications
 
-**Recommended:**
-- `jq` - JSON processing (for state management)
-- `pciutils` - GPU/hardware detection
-- `usbutils` - USB device detection
-- `dmidecode` - System information
-- `smartmontools` - Disk health monitoring
+### Recommended
+- `jq` — JSON processing (for state management)
+- `pciutils` — GPU/hardware detection (`lspci`)
+- `usbutils` — USB device detection (`lsusb`)
+- `dmidecode` — System information
+- `smartmontools` — Disk health monitoring
 
-**Optional (for enhanced TUI):**
-- `gum` - Modern TUI toolkit (best experience)
-- `fzf` - Fuzzy finder (good fallback)
+### Optional (Enhanced TUI)
+- `gum` — Modern TUI toolkit (best experience)
+- `fzf` — Fuzzy finder (good fallback)
+- `whiptail` — ncurses dialogs (basic fallback)
+
+### Security Lab Requirements
+- `qemu-kvm` — Virtualization
+- `libvirt` — VM management
+- `virt-manager` — GUI for VMs
+- `cryptsetup` — LUKS encryption
+
+---
+
+## Configuration
+
+### Suite Configuration
+
+Configuration is stored in `~/.config/unified-suite/` or `/etc/unified-suite/`:
+
+```bash
+~/.config/unified-suite/
+├── config.sh        # User preferences
+├── profiles/        # Custom optimization profiles
+└── state.json       # Session state
+```
+
+### State Management
+
+The suite maintains state across sessions:
+
+```bash
+# User state
+~/.local/state/ultimate-suite/
+
+# System state (when running as root)
+/var/lib/linux-suite/
+```
+
+---
 
 ## Development
 
-### Syntax Check
-```bash
-make test
-# or
-bash -n lib/*.sh modules/*.sh
-```
+### Running Tests
 
-### Run Tests
 ```bash
+# Run all tests
+./tests/run_all_tests.sh
+
+# Run with framework
 source tests/framework.sh
 run_test_suite tests/
+
+# Syntax check
+make test
+# or
+bash -n lib/*.sh modules/**/*.sh
 ```
 
 ### Adding a Module
-1. Create `lib/mymodule.sh` with proper guards and dependencies
+
+1. Create your module in the appropriate directory
 2. Follow the dependency pattern:
+
 ```bash
-# Source logging with fallback
+#!/usr/bin/env bash
+# modules/mymodule/feature.sh
+
+# Source dependencies with fallback
 if ! declare -f log_info &>/dev/null; then
-    source "${SCRIPT_DIR}/logging.sh" 2>/dev/null || {
+    source "${SUITE_ROOT}/lib/logging.sh" 2>/dev/null || {
         log_info() { echo "[INFO] $*"; }
-        # ... fallbacks
+        log_error() { echo "[ERROR] $*" >&2; }
     }
 fi
+
+# Your module code here
+my_feature() {
+    log_info "Running my feature..."
+    # ...
+}
 ```
+
+3. Add menu integration if needed
+4. Update documentation
+
+---
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Test on at least one supported distribution
-4. Run syntax checks: `bash -n lib/*.sh modules/*.sh`
-5. Run tests: `source tests/framework.sh && run_test_suite tests/`
-6. Submit a pull request
+4. Run syntax checks: `bash -n lib/*.sh modules/**/*.sh`
+5. Run tests: `./tests/run_all_tests.sh`
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
 
-## Known Limitations
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-- Some pentest tools require Kali/Parrot repositories
-- NVIDIA drivers may need additional repo setup on some distros
-- AUR packages require yay/paru (can be auto-installed)
-- Some kernel changes require reboot
-- Immutable distros have limited native package support (use Flatpak)
+---
+
+## Security
+
+For security-related issues, please see [SECURITY.md](SECURITY.md).
+
+**Note:** The pentest tools module is intended for authorized security testing, CTF challenges, and educational purposes only. Always obtain proper authorization before testing systems you do not own.
+
+---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file.
+This project is licensed under the **MIT** License. See [LICENSE](LICENSE) for details.
+
+---
+
+## Acknowledgments
+
+- **Ultimate Linux Suite** contributors
+- **OffTrack Suite** contributors
+- The Linux community for distribution-specific guidance
+- [Charm.sh](https://charm.sh) for the amazing `gum` TUI toolkit
+- [Dracula Theme](https://draculatheme.com) for the color palette
+
+---
 
 ## Links
 
 - **Repository:** https://github.com/Nerds489/ultimate-linux-suite
 - **Issues:** https://github.com/Nerds489/ultimate-linux-suite/issues
+- **Discussions:** https://github.com/Nerds489/ultimate-linux-suite/discussions
+
+---
+
+<p align="center">
+  <strong>Unified Linux Suite v4.0.0</strong><br/>
+  <em>"Sovereign Optimization Protocol"</em>
+</p>

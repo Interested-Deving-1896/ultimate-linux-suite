@@ -6,7 +6,7 @@
 # A comprehensive Linux system management platform combining
 # OffTrack Suite and Ultimate Linux Suite functionality.
 #
-# License: GPL-3.0-or-later
+# License: MIT
 # ============================================================
 
 set -euo pipefail
