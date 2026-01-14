@@ -251,3 +251,47 @@ snap_install() {
 
     sudo snap install "$app"
 }
+
+# Install and configure Flatpak with Flathub
+pkg_install_flatpak() {
+    log_info "Installing and configuring Flatpak..."
+
+    if [[ $DRY_RUN -eq 1 ]]; then
+        log_info "[DRY-RUN] Would install flatpak and configure Flathub"
+        return 0
+    fi
+
+    # Install flatpak package
+    if ! command_exists flatpak; then
+        case "$OS_PACKAGE_MANAGER" in
+            apt)
+                sudo apt install -y flatpak
+                # Install GNOME Software plugin if GNOME detected
+                if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]]; then
+                    sudo apt install -y gnome-software-plugin-flatpak 2>/dev/null || true
+                fi
+                ;;
+            dnf)
+                sudo dnf install -y flatpak
+                ;;
+            pacman)
+                sudo pacman -S --noconfirm --needed flatpak
+                ;;
+            zypper)
+                sudo zypper install -y flatpak
+                ;;
+            *)
+                log_error "Cannot install flatpak: unsupported package manager"
+                return 1
+                ;;
+        esac
+    fi
+
+    # Add Flathub remote if not present
+    if ! flatpak remote-list 2>/dev/null | grep -q "flathub"; then
+        log_info "Adding Flathub repository..."
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    fi
+
+    log_success "Flatpak configured with Flathub"
+}

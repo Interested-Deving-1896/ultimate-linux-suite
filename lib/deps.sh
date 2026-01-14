@@ -158,3 +158,29 @@ check_tui_deps() {
     fi
     return 0
 }
+
+# Install build dependencies for compiling drivers/modules
+pkg_install_build_deps() {
+    log_info "Installing build dependencies..."
+
+    case "$OS_FAMILY" in
+        debian)
+            pkg_install build-essential dkms git linux-headers-$(uname -r) 2>/dev/null || \
+            pkg_install build-essential dkms git linux-headers-generic
+            ;;
+        fedora)
+            pkg_install @development-tools kernel-devel kernel-headers dkms git
+            ;;
+        arch)
+            pkg_install base-devel linux-headers dkms git
+            ;;
+        opensuse)
+            pkg_install -t pattern devel_basis
+            pkg_install kernel-devel dkms git
+            ;;
+        *)
+            log_warn "Unknown OS family: $OS_FAMILY - attempting generic build deps"
+            pkg_install gcc make git dkms
+            ;;
+    esac
+}

@@ -159,5 +159,127 @@ print_macbook_info() {
     fi
 }
 
+# ============================================================
+# DRIVER REQUIREMENT CHECKS
+# ============================================================
+
+# Check if SPI driver is needed (keyboard/trackpad)
+macbook_needs_spi_driver() {
+    if ! is_macbook; then
+        return 1
+    fi
+
+    # Check if apple_spi module is already loaded
+    if lsmod | grep -q "apple_spi\|applespi"; then
+        return 1  # Already working
+    fi
+
+    # Check if internal keyboard is detected
+    if [[ -e /dev/input/by-path/*-event-kbd ]]; then
+        # Keyboard exists, check if it's USB (external) or internal
+        local kbd_path=$(ls /dev/input/by-path/*-event-kbd 2>/dev/null | head -1)
+        if [[ "$kbd_path" == *"usb"* ]]; then
+            return 0  # Only USB keyboard, needs SPI driver
+        fi
+        return 1  # Internal keyboard working
+    fi
+
+    return 0  # No keyboard detected, needs driver
+}
+
+# Check if audio driver is needed
+macbook_needs_audio_driver() {
+    if ! is_macbook; then
+        return 1
+    fi
+
+    # Check if Cirrus codec driver is loaded
+    if lsmod | grep -q "snd_hda_codec_cs8409\|snd_hda_macbookpro"; then
+        return 1  # Already loaded
+    fi
+
+    # Check if any audio device is working
+    if command -v pactl &>/dev/null; then
+        if pactl list sinks 2>/dev/null | grep -qi "running\|idle"; then
+            return 1  # Audio is working
+        fi
+    fi
+
+    # Check for Cirrus hardware
+    if lspci 2>/dev/null | grep -qi "cirrus\|cs8409"; then
+        return 0  # Has Cirrus chip, needs driver
+    fi
+
+    # MacBook Pros 2016-2020 typically need audio driver
+    case "$MACBOOK_MODEL" in
+        MacBookPro1[3-6],*)
+            return 0  # These models need Cirrus driver
+            ;;
+    esac
+
+    return 1
+}
+
+# Check if WiFi configuration is needed
+macbook_needs_wifi_config() {
+    if ! is_macbook; then
+        return 1
+    fi
+
+    # Check if WiFi interface exists
+    if ip link show 2>/dev/null | grep -qE "wlan[0-9]|wlp"; then
+        return 1  # WiFi interface exists
+    fi
+
+    # Check if brcmfmac module is loaded
+    if lsmod | grep -q "brcmfmac"; then
+        # Module loaded but no interface - might need firmware
+        return 0
+    fi
+
+    # Check for Broadcom hardware
+    if lspci 2>/dev/null | grep -qi "broadcom.*wireless\|bcm43"; then
+        return 0  # Has Broadcom chip, needs config
+    fi
+
+    return 1
+}
+
+# Detect WiFi chip model
+macbook_detect_wifi() {
+    local chip=""
+
+    # Try to detect from lspci
+    local pci_info=$(lspci 2>/dev/null | grep -i "network\|wireless" | head -1)
+
+    if echo "$pci_info" | grep -qi "bcm43602"; then
+        chip="bcm43602"
+    elif echo "$pci_info" | grep -qi "bcm4350"; then
+        chip="bcm4350"
+    elif echo "$pci_info" | grep -qi "bcm4360"; then
+        chip="bcm4360"
+    elif echo "$pci_info" | grep -qi "bcm4352"; then
+        chip="bcm4352"
+    elif echo "$pci_info" | grep -qi "broadcom"; then
+        # Generic Broadcom detection based on MacBook model
+        case "$MACBOOK_MODEL" in
+            MacBookPro1[5-6],*)
+                chip="bcm4364"
+                ;;
+            MacBookPro1[3-4],*)
+                chip="bcm43602"
+                ;;
+            MacBookAir*)
+                chip="bcm4350"
+                ;;
+            *)
+                chip="bcm43xx"
+                ;;
+        esac
+    fi
+
+    echo "$chip"
+}
+
 # Initialize detection on source (don't fail if not MacBook)
 macbook_detect || true

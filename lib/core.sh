@@ -243,6 +243,35 @@ get_primary_storage() {
     lsblk -dno NAME,TYPE 2>/dev/null | awk '$2=="disk" {print $1; exit}'
 }
 
+# Check network connectivity
+check_network() {
+    local test_hosts=("1.1.1.1" "8.8.8.8" "google.com")
+
+    for host in "${test_hosts[@]}"; do
+        if ping -c 1 -W 3 "$host" &>/dev/null; then
+            return 0
+        fi
+    done
+
+    # Try curl as fallback
+    if command_exists curl; then
+        curl -s --max-time 5 --head https://google.com &>/dev/null && return 0
+    fi
+
+    return 1
+}
+
+# Check available disk space (in MB)
+check_disk_space() {
+    local required_mb="${1:-1000}"
+    local mount_point="${2:-/}"
+
+    local available_kb=$(df -k "$mount_point" 2>/dev/null | awk 'NR==2 {print $4}')
+    local available_mb=$((available_kb / 1024))
+
+    [[ $available_mb -ge $required_mb ]]
+}
+
 # ============================================================
 # BANNER
 # ============================================================

@@ -302,7 +302,7 @@ ultimate-linux-suite/
 ├── ultimate.sh              # Legacy entry point
 ├── suite.sh -> ultimate.sh  # Symlink for compatibility
 ├── VERSION                  # Version file (4.0.0)
-├── LICENSE                  # GPL-3.0 License
+├── LICENSE                  # MIT License
 ├── Makefile                 # Build & install targets
 │
 ├── lib/                     # Core libraries
@@ -397,11 +397,26 @@ sudo make install
 unified-linux-suite  # Run from anywhere
 ```
 
-### Option 3: One-Liner
+### Option 3: Quick Install
 
+**Recommended approach** (download and inspect first):
+```bash
+# Download the script
+curl -fsSL -o unified.sh https://raw.githubusercontent.com/Nerds489/ultimate-linux-suite/main/unified.sh
+
+# Inspect the script (optional but recommended)
+less unified.sh
+
+# Run after inspection
+chmod +x unified.sh && sudo ./unified.sh
+```
+
+**One-liner** (if you trust the source):
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Nerds489/ultimate-linux-suite/main/unified.sh | sudo bash
 ```
+
+> **Security Note:** Running scripts directly from the internet with root privileges is a security risk. We recommend downloading and inspecting scripts before execution.
 
 ---
 

@@ -17,8 +17,15 @@ declare -g TUI_BACKEND=""
 declare -g TUI_AVAILABLE=0
 
 # Detect available TUI backend
+# Priority: gum > fzf > whiptail > dialog > none
 detect_tui_backend() {
-    if command -v whiptail &>/dev/null; then
+    if command -v gum &>/dev/null; then
+        TUI_BACKEND="gum"
+        TUI_AVAILABLE=1
+    elif command -v fzf &>/dev/null; then
+        TUI_BACKEND="fzf"
+        TUI_AVAILABLE=1
+    elif command -v whiptail &>/dev/null; then
         TUI_BACKEND="whiptail"
         TUI_AVAILABLE=1
     elif command -v dialog &>/dev/null; then
@@ -58,16 +65,27 @@ tui_msgbox() {
     local height=${3:-10}
     local width=${4:-60}
 
-    if [[ $TUI_AVAILABLE -eq 0 ]]; then
-        echo ""
-        echo "=== $title ==="
-        echo "$message"
-        echo ""
-        read -rp "Press Enter to continue..."
-        return 0
-    fi
-
-    $TUI_BACKEND --title "$title" --msgbox "$message" $height $width
+    case "$TUI_BACKEND" in
+        gum)
+            gum style --border normal --padding "1 2" --border-foreground 212 "$title" && \
+            echo "$message" && \
+            gum confirm "Continue" --affirmative="OK" --negative="" 2>/dev/null || true
+            ;;
+        fzf)
+            echo -e "=== $title ===\n\n$message\n\nPress Enter to continue..."
+            read -r
+            ;;
+        whiptail|dialog)
+            $TUI_BACKEND --title "$title" --msgbox "$message" $height $width
+            ;;
+        *)
+            echo ""
+            echo "=== $title ==="
+            echo "$message"
+            echo ""
+            read -rp "Press Enter to continue..."
+            ;;
+    esac
 }
 
 # Yes/No dialog
@@ -77,12 +95,22 @@ tui_yesno() {
     local height=${3:-10}
     local width=${4:-60}
 
-    if [[ $TUI_AVAILABLE -eq 0 ]]; then
-        read -rp "$message [y/N]: " response
-        [[ "${response,,}" == "y" ]] && return 0 || return 1
-    fi
-
-    $TUI_BACKEND --title "$title" --yesno "$message" $height $width
+    case "$TUI_BACKEND" in
+        gum)
+            gum confirm "$message"
+            ;;
+        fzf)
+            local choice=$(echo -e "Yes\nNo" | fzf --prompt="$message " --height=5)
+            [[ "$choice" == "Yes" ]]
+            ;;
+        whiptail|dialog)
+            $TUI_BACKEND --title "$title" --yesno "$message" $height $width
+            ;;
+        *)
+            read -rp "$message [y/N]: " response
+            [[ "${response,,}" == "y" ]]
+            ;;
+    esac
 }
 
 # Input box
@@ -127,27 +155,51 @@ tui_menu() {
     local width=${TUI_WIDTH:-70}
     local menu_height=$((height - 8))
 
-    if [[ $TUI_AVAILABLE -eq 0 ]]; then
-        echo ""
-        echo "=== $title ==="
-        local i=1
-        local -a items=()
-        while [[ $# -gt 0 ]]; do
-            items+=("$1")
-            echo "  $i) $1 - $2"
-            shift 2
-            ((i++))
-        done
-        echo ""
-        read -rp "Selection: " choice
-        if [[ "$choice" =~ ^[0-9]+$ ]] && [[ $choice -ge 1 ]] && [[ $choice -le ${#items[@]} ]]; then
-            echo "${items[$((choice-1))]}"
-        fi
-        return 0
-    fi
-
-    $TUI_BACKEND --title "$title" --menu "Select an option:" \
-        $height $width $menu_height "$@" 3>&1 1>&2 2>&3
+    case "$TUI_BACKEND" in
+        gum)
+            # Build options array for gum
+            local -a options=()
+            while [[ $# -gt 0 ]]; do
+                options+=("$1")
+                shift 2  # Skip description for gum (simpler interface)
+            done
+            gum choose --header="$title" "${options[@]}"
+            ;;
+        fzf)
+            # Build display for fzf
+            local -a display=()
+            local -a keys=()
+            while [[ $# -gt 0 ]]; do
+                keys+=("$1")
+                display+=("$1 - $2")
+                shift 2
+            done
+            local selected=$(printf '%s\n' "${display[@]}" | fzf --prompt="$title: " --height=15)
+            # Extract key from selected display
+            echo "$selected" | cut -d' ' -f1
+            ;;
+        whiptail|dialog)
+            $TUI_BACKEND --title "$title" --menu "Select an option:" \
+                $height $width $menu_height "$@" 3>&1 1>&2 2>&3
+            ;;
+        *)
+            echo ""
+            echo "=== $title ==="
+            local i=1
+            local -a items=()
+            while [[ $# -gt 0 ]]; do
+                items+=("$1")
+                echo "  $i) $1 - $2"
+                shift 2
+                ((i++))
+            done
+            echo ""
+            read -rp "Selection: " choice
+            if [[ "$choice" =~ ^[0-9]+$ ]] && [[ $choice -ge 1 ]] && [[ $choice -le ${#items[@]} ]]; then
+                echo "${items[$((choice-1))]}"
+            fi
+            ;;
+    esac
 }
 
 # Checklist
