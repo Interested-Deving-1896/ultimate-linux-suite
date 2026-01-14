@@ -1,9 +1,163 @@
 # Changelog
 
-All notable changes to Ultimate Linux Suite will be documented in this file.
+All notable changes to Unified Linux Suite will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [4.0.0] - 2026-01-14
+
+### The Unified Release
+
+**Major release merging Ultimate Linux Suite with OffTrack Suite** — combining system management, optimization, security tools, and hardware support into a single comprehensive platform.
+
+### Added
+
+#### New Entry Point
+- **`unified.sh`** — New primary entry point with enhanced CLI
+  - Full command structure: `unified.sh [OPTIONS] COMMAND [ARGS]`
+  - Dry-run mode (`-n, --dry-run`) for previewing changes
+  - Auto-confirm mode (`-y, --yes`) for scripting
+  - Debug mode (`-d, --debug`) for troubleshooting
+  - Quiet mode (`-q, --quiet`) for minimal output
+
+#### Security Modules (`modules/security/`)
+- **Firewall Manager** (`firewall.sh`) — Unified interface for ufw, firewalld, and iptables
+  - Automatic detection of installed firewall
+  - Common operations across all backends
+  - Status, enable, disable, rule management
+- **Encrypted Vault** (`vault.sh`) — LUKS-encrypted secure storage
+  - Create, open, close vault operations
+  - Status reporting
+  - Secure key management
+- **Security Lab Setup** (`lab_setup.sh`) — Isolated testing environment
+  - Network isolation configuration
+  - Snapshot management for experiments
+- **KVM Setup** (`kvm_setup.sh`) — Virtualization for security testing
+  - QEMU/KVM installation and configuration
+  - libvirt integration
+  - virt-manager setup
+- **Malware Lab** (`malware_lab.sh`) — Malware analysis environment
+  - Isolated VM configuration
+  - Analysis tool setup
+- **Windows VM** (`windows_vm.sh`) — Automated Windows deployment
+  - Windows VM creation for testing
+  - Driver and tool installation
+
+#### Pentest Modules (`modules/pentest/`)
+- **Tools Installer** (`tools_installer.sh`) — Bulk pentest tool installation
+  - One-click installation of common tools
+  - Progress tracking
+  - Dependency management
+- **Voidwave Integration** (`voidwave.sh`) — Wireless security tools
+- **Individual Tool Installers** (`individual/`)
+  - `metasploit.sh` — Metasploit Framework
+  - `sqlmap.sh` — SQL injection automation
+  - `nikto.sh` — Web server scanner
+  - `wifite.sh` — Wireless attack automation
+  - `exploitdb.sh` — Exploit database search
+
+#### Optimization Modules (`modules/optimization/`)
+- **RAM Optimizer** (`ram_optimizer.sh`)
+  - Swappiness optimization based on RAM size
+  - Cache pressure tuning
+  - ZRAM configuration
+  - Interactive wizard mode
+- **CPU Optimizer** (`cpu_optimizer.sh`)
+  - Governor selection (performance, powersave, schedutil)
+  - P-State configuration
+  - Boost control
+  - Interactive wizard mode
+- **Performance Profiles** (`profiles.sh`)
+  - Gaming profile — Maximum performance
+  - Server profile — Balanced for services
+  - Laptop profile — Power efficiency
+  - Desktop profile — General use
+  - Balanced profile — Default
+
+#### MacBook Support (`drivers/macbook/`)
+- **MacBook Detection** (`lib/macbook_detect.sh`)
+  - Automatic MacBook generation identification
+  - Model-specific configuration
+- **Audio Driver** (`audio_cirrus.sh`) — Cirrus Logic audio fix
+  - MacBook Pro audio driver installation
+  - ALSA configuration
+- **WiFi Driver** (`wifi_broadcom.sh`) — Broadcom wireless
+  - Broadcom WiFi configuration
+  - Firmware management
+- **SPI Driver** (`spi_driver.sh`) — Apple SPI keyboard/trackpad
+  - Kernel module installation
+  - DKMS configuration
+- **Fix All** (`fix_all.sh`) — Run all MacBook fixes in sequence
+
+#### Bootstrap & Installers (`modules/bootstrap/`, `modules/installers/`)
+- **Bootstrap Wizard** (`bootstrap.sh`) — Full system bootstrap
+  - System assessment
+  - Optimization recommendations
+  - Guided setup
+- **Arch Guided** (`arch_guided.sh`) — Arch Linux installation helper
+- **Mint Recovery** (`mint_recovery.sh`) — Linux Mint recovery tools
+- **Parrot Lab** (`parrot_lab.sh`) — Parrot OS lab setup
+- **Disk Partition** (`disk_partition.sh`) — Partitioning utilities
+
+#### Application Management (`modules/apps/`)
+- **App Installer** (`app_installer.sh`) — Category-based installation
+  - Browser, development, gaming, media categories
+  - Cross-distro package mapping
+  - Cascade installation support
+
+#### New Core Libraries (`lib/`)
+- **Colors** (`colors.sh`) — Terminal color definitions (Dracula theme)
+- **Config** (`config.sh`) — Configuration management
+- **Core** (`core.sh`) — Core functions and utilities
+- **Deps** (`deps.sh`) — Dependency management
+- **Hardware** (`hardware.sh`) — Hardware detection utilities
+- **Init** (`init.sh`) — Suite initialization
+- **Monitor** (`monitor.sh`) — System monitoring functions
+- **Optimization** (`optimization.sh`) — Optimization algorithms
+- **Safety** (`safety.sh`) — Snapshot and rollback system
+
+#### Utility Scripts (`scripts/`)
+- **Askpass Setup** (`askpass_setup.sh`) — SSH askpass configuration
+- **Update All** (`update-all.sh`) — System update script
+
+#### Test Suite (`tests/`)
+- **Run All Tests** (`run_all_tests.sh`) — Comprehensive test runner
+- **Swappiness Test** (`test_swappiness.sh`) — Optimization validation
+
+### Changed
+
+- **Primary entry point** is now `unified.sh` (legacy `ultimate.sh` still works)
+- **Project name** updated to "Unified Linux Suite"
+- **Codename** is now "Sovereign Optimization Protocol"
+- **License** remains MIT (unchanged)
+- **README** completely rewritten for v4.0.0
+
+### Enhanced
+
+- **Main menu** expanded with security, pentest, and MacBook options
+- **Logging** improved with additional levels and formatting
+- **OS detection** enhanced with more distribution support
+- **Package management** improved with better error handling
+- **TUI** updated with additional dialog types
+
+### Migration from v3.x
+
+No breaking changes. All v3.x functionality preserved:
+- `ultimate.sh` continues to work as before
+- All existing commands and options unchanged
+- Configuration files remain compatible
+
+To use new features:
+```bash
+# New unified entry point (recommended)
+./unified.sh
+
+# Or continue using legacy entry point
+./ultimate.sh
+```
+
+---
 
 ## [3.0.0] - 2024-12-22
 

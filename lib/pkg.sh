@@ -1,104 +1,52 @@
 #!/usr/bin/env bash
-#
-# pkg.sh - Package Management Abstraction for Ultimate Linux Suite
-#
-# Note: set options inherited from suite.sh - do not set here
+# Unified Suite - Package Manager Abstraction
+# Source: OffTrack Suite + Ultimate Suite merged
+# License: GPL-3.0-or-later
 
-# Prevent multiple sourcing
-[[ -n "${_PKG_LOADED:-}" ]] && return 0
-readonly _PKG_LOADED=1
+[[ -n "${_UNIFIED_PKG_LOADED:-}" ]] && return 0
+readonly _UNIFIED_PKG_LOADED=1
 
-# ============================================================================
-# Dependencies
-# ============================================================================
+# Source dependencies
+[[ -z "${_UNIFIED_CORE_LOADED:-}" ]] && source "${BASH_SOURCE%/*}/core.sh"
+[[ -z "${_UNIFIED_LOGGING_LOADED:-}" ]] && source "${BASH_SOURCE%/*}/logging.sh"
+[[ -z "${_UNIFIED_OS_DETECT_LOADED:-}" ]] && source "${BASH_SOURCE%/*}/os_detect.sh"
 
-# Get script directory for relative sourcing
-_PKG_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Source logging if not already loaded
-if ! declare -f log_info &>/dev/null; then
-    source "${_PKG_SCRIPT_DIR}/logging.sh" 2>/dev/null || {
-        # Minimal fallback logging functions
-        log_info() { echo "[INFO] $*"; }
-        log_success() { echo "[OK] $*"; }
-        log_warn() { echo "[WARN] $*" >&2; }
-        log_error() { echo "[ERROR] $*" >&2; }
-        log_debug() { [[ "${DEBUG:-0}" == "1" ]] && echo "[DEBUG] $*" >&2; }
-    }
-fi
-
-# Source os_detect if PKG_MANAGER not set
-if [[ -z "${PKG_MANAGER:-}" ]]; then
-    if [[ -f "${_PKG_SCRIPT_DIR}/os_detect.sh" ]]; then
-        source "${_PKG_SCRIPT_DIR}/os_detect.sh" 2>/dev/null
-        # Run detection if function exists
-        if declare -f detect_os &>/dev/null; then
-            detect_os 2>/dev/null || true
-        fi
-    fi
-fi
-
-# Final fallback for PKG_MANAGER
-if [[ -z "${PKG_MANAGER:-}" ]]; then
-    # Auto-detect package manager
-    if command -v apt-get &>/dev/null; then
-        PKG_MANAGER="apt"
-    elif command -v dnf &>/dev/null; then
-        PKG_MANAGER="dnf"
-    elif command -v yum &>/dev/null; then
-        PKG_MANAGER="yum"
-    elif command -v pacman &>/dev/null; then
-        PKG_MANAGER="pacman"
-    elif command -v zypper &>/dev/null; then
-        PKG_MANAGER="zypper"
-    elif command -v apk &>/dev/null; then
-        PKG_MANAGER="apk"
-    elif command -v xbps-install &>/dev/null; then
-        PKG_MANAGER="xbps"
-    else
-        PKG_MANAGER="unknown"
-    fi
-fi
+# ============================================================
+# PACKAGE MANAGEMENT FUNCTIONS
+# ============================================================
 
 # Update package lists
 pkg_update() {
     log_info "Updating package lists..."
 
-    case "$PKG_MANAGER" in
+    if [[ $DRY_RUN -eq 1 ]]; then
+        log_info "[DRY-RUN] Would update package lists"
+        return 0
+    fi
+
+    case "$OS_PACKAGE_MANAGER" in
         apt)
-            apt-get update -qq
+            sudo apt update
             ;;
         dnf)
-            dnf check-update -q || true  # returns 100 if updates available
-            ;;
-        yum)
-            yum check-update -q || true
+            sudo dnf check-update || true
             ;;
         pacman)
-            pacman -Sy --noconfirm
+            sudo pacman -Sy
             ;;
         zypper)
-            zypper refresh -q
-            ;;
-        apk)
-            apk update
-            ;;
-        xbps)
-            xbps-install -S
+            sudo zypper refresh
             ;;
         *)
-            log_error "Unsupported package manager: $PKG_MANAGER"
+            log_error "Unsupported package manager: $OS_PACKAGE_MANAGER"
             return 1
             ;;
     esac
-
-    log_success "Package lists updated"
 }
 
 # Install packages
-# Usage: pkg_install pkg1 pkg2 pkg3 ...
 pkg_install() {
-    local packages=("$@")
+    local -a packages=("$@")
 
     if [[ ${#packages[@]} -eq 0 ]]; then
         log_warn "No packages specified"
@@ -107,40 +55,34 @@ pkg_install() {
 
     log_info "Installing: ${packages[*]}"
 
-    case "$PKG_MANAGER" in
+    if [[ $DRY_RUN -eq 1 ]]; then
+        log_info "[DRY-RUN] Would install: ${packages[*]}"
+        return 0
+    fi
+
+    case "$OS_PACKAGE_MANAGER" in
         apt)
-            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${packages[@]}"
+            sudo apt install -y "${packages[@]}"
             ;;
         dnf)
-            dnf install -y -q "${packages[@]}"
-            ;;
-        yum)
-            yum install -y -q "${packages[@]}"
+            sudo dnf install -y "${packages[@]}"
             ;;
         pacman)
-            pacman -S --noconfirm --needed "${packages[@]}"
+            sudo pacman -S --noconfirm --needed "${packages[@]}"
             ;;
         zypper)
-            zypper install -y -q "${packages[@]}"
-            ;;
-        apk)
-            apk add --no-cache "${packages[@]}"
-            ;;
-        xbps)
-            xbps-install -y "${packages[@]}"
+            sudo zypper install -y "${packages[@]}"
             ;;
         *)
-            log_error "Unsupported package manager: $PKG_MANAGER"
+            log_error "Unsupported package manager: $OS_PACKAGE_MANAGER"
             return 1
             ;;
     esac
-
-    log_success "Installation complete"
 }
 
 # Remove packages
 pkg_remove() {
-    local packages=("$@")
+    local -a packages=("$@")
 
     if [[ ${#packages[@]} -eq 0 ]]; then
         return 0
@@ -148,59 +90,47 @@ pkg_remove() {
 
     log_info "Removing: ${packages[*]}"
 
-    case "$PKG_MANAGER" in
+    if [[ $DRY_RUN -eq 1 ]]; then
+        log_info "[DRY-RUN] Would remove: ${packages[*]}"
+        return 0
+    fi
+
+    case "$OS_PACKAGE_MANAGER" in
         apt)
-            apt-get remove -y -qq "${packages[@]}"
+            sudo apt remove -y "${packages[@]}"
             ;;
         dnf)
-            dnf remove -y -q "${packages[@]}"
-            ;;
-        yum)
-            yum remove -y -q "${packages[@]}"
+            sudo dnf remove -y "${packages[@]}"
             ;;
         pacman)
-            pacman -R --noconfirm "${packages[@]}"
+            sudo pacman -R --noconfirm "${packages[@]}"
             ;;
         zypper)
-            zypper remove -y -q "${packages[@]}"
-            ;;
-        apk)
-            apk del "${packages[@]}"
-            ;;
-        xbps)
-            xbps-remove -y "${packages[@]}"
+            sudo zypper remove -y "${packages[@]}"
             ;;
         *)
-            log_error "Unsupported package manager: $PKG_MANAGER"
+            log_error "Unsupported package manager"
             return 1
             ;;
     esac
-
-    log_success "Removal complete"
 }
 
 # Check if package is installed
 pkg_is_installed() {
-    local pkg="$1"
+    local package="$1"
 
-    case "$PKG_MANAGER" in
+    case "$OS_PACKAGE_MANAGER" in
         apt)
-            dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"
+            dpkg -l "$package" 2>/dev/null | grep -q "^ii"
             ;;
-        dnf|yum)
-            rpm -q "$pkg" &>/dev/null
+        dnf)
+            rpm -q "$package" &>/dev/null
             ;;
         pacman)
-            pacman -Qi "$pkg" &>/dev/null
+            pacman -Q "$package" &>/dev/null
             ;;
         zypper)
-            rpm -q "$pkg" &>/dev/null
-            ;;
-        apk)
-            apk info -e "$pkg" &>/dev/null
-            ;;
-        xbps)
-            xbps-query "$pkg" &>/dev/null
+            rpm -q "$package" &>/dev/null
             ;;
         *)
             return 1
@@ -208,19 +138,72 @@ pkg_is_installed() {
     esac
 }
 
-# Search for packages
+# Full system upgrade
+pkg_upgrade() {
+    log_info "Upgrading system packages..."
+
+    if [[ $DRY_RUN -eq 1 ]]; then
+        log_info "[DRY-RUN] Would upgrade system"
+        return 0
+    fi
+
+    case "$OS_PACKAGE_MANAGER" in
+        apt)
+            sudo apt upgrade -y
+            ;;
+        dnf)
+            sudo dnf upgrade -y
+            ;;
+        pacman)
+            sudo pacman -Syu --noconfirm
+            ;;
+        zypper)
+            sudo zypper update -y
+            ;;
+        *)
+            log_error "Unsupported package manager"
+            return 1
+            ;;
+    esac
+}
+
+# Clean package cache
+pkg_clean() {
+    log_info "Cleaning package cache..."
+
+    if [[ $DRY_RUN -eq 1 ]]; then
+        log_info "[DRY-RUN] Would clean cache"
+        return 0
+    fi
+
+    case "$OS_PACKAGE_MANAGER" in
+        apt)
+            sudo apt autoremove -y
+            sudo apt clean
+            ;;
+        dnf)
+            sudo dnf autoremove -y
+            sudo dnf clean all
+            ;;
+        pacman)
+            sudo pacman -Sc --noconfirm
+            ;;
+        zypper)
+            sudo zypper clean
+            ;;
+    esac
+}
+
+# Search for package
 pkg_search() {
     local query="$1"
 
-    case "$PKG_MANAGER" in
+    case "$OS_PACKAGE_MANAGER" in
         apt)
-            apt-cache search "$query"
+            apt search "$query" 2>/dev/null
             ;;
         dnf)
             dnf search "$query"
-            ;;
-        yum)
-            yum search "$query"
             ;;
         pacman)
             pacman -Ss "$query"
@@ -228,365 +211,87 @@ pkg_search() {
         zypper)
             zypper search "$query"
             ;;
-        apk)
-            apk search "$query"
-            ;;
-        xbps)
-            xbps-query -Rs "$query"
-            ;;
-        *)
-            log_error "Unsupported package manager"
-            return 1
-            ;;
     esac
-}
-
-# Get package name mapping for cross-distro compatibility
-# Usage: pkg_name GENERIC_NAME
-# Returns the distro-specific package name
-pkg_name() {
-    local generic="$1"
-
-    # Define mappings for common packages
-    declare -A apt_map=(
-        [build-essential]="build-essential"
-        [kernel-headers]="linux-headers-$(uname -r)"
-        [dkms]="dkms"
-        [git]="git"
-        [curl]="curl"
-        [wget]="wget"
-        [vim]="vim"
-        [htop]="htop"
-        [neofetch]="neofetch"
-        [dialog]="dialog"
-    )
-
-    declare -A dnf_map=(
-        [build-essential]="@development-tools"
-        [kernel-headers]="kernel-devel"
-        [dkms]="dkms"
-        [git]="git"
-        [curl]="curl"
-        [wget]="wget"
-        [vim]="vim-enhanced"
-        [htop]="htop"
-        [neofetch]="neofetch"
-        [dialog]="dialog"
-    )
-
-    declare -A pacman_map=(
-        [build-essential]="base-devel"
-        [kernel-headers]="linux-headers"
-        [dkms]="dkms"
-        [git]="git"
-        [curl]="curl"
-        [wget]="wget"
-        [vim]="vim"
-        [htop]="htop"
-        [neofetch]="neofetch"
-        [dialog]="dialog"
-    )
-
-    declare -A zypper_map=(
-        [build-essential]="devel_basis"
-        [kernel-headers]="kernel-default-devel"
-        [dkms]="dkms"
-        [git]="git"
-        [curl]="curl"
-        [wget]="wget"
-        [vim]="vim"
-        [htop]="htop"
-        [neofetch]="neofetch"
-        [dialog]="dialog"
-    )
-
-    declare -A apk_map=(
-        [build-essential]="build-base"
-        [kernel-headers]="linux-headers"
-        [dkms]="dkms"
-        [git]="git"
-        [curl]="curl"
-        [wget]="wget"
-        [vim]="vim"
-        [htop]="htop"
-        [neofetch]="neofetch"
-        [dialog]="dialog"
-    )
-
-    declare -A xbps_map=(
-        [build-essential]="base-devel"
-        [kernel-headers]="linux-headers"
-        [dkms]="dkms"
-        [git]="git"
-        [curl]="curl"
-        [wget]="wget"
-        [vim]="vim"
-        [htop]="htop"
-        [neofetch]="neofetch"
-        [dialog]="dialog"
-    )
-
-    case "$PKG_MANAGER" in
-        apt)
-            echo "${apt_map[$generic]:-$generic}"
-            ;;
-        dnf|yum)
-            echo "${dnf_map[$generic]:-$generic}"
-            ;;
-        pacman)
-            echo "${pacman_map[$generic]:-$generic}"
-            ;;
-        zypper)
-            echo "${zypper_map[$generic]:-$generic}"
-            ;;
-        apk)
-            echo "${apk_map[$generic]:-$generic}"
-            ;;
-        xbps)
-            echo "${xbps_map[$generic]:-$generic}"
-            ;;
-        *)
-            echo "$generic"
-            ;;
-    esac
-}
-
-# Ensure a package is installed
-pkg_ensure() {
-    local pkg="$1"
-    local mapped
-    mapped=$(pkg_name "$pkg")
-
-    if ! pkg_is_installed "$mapped"; then
-        log_info "Installing required package: $mapped"
-        pkg_install "$mapped"
-    fi
-}
-
-# Fix broken packages
-pkg_fix() {
-    log_info "Attempting to fix broken packages..."
-
-    case "$PKG_MANAGER" in
-        apt)
-            dpkg --configure -a
-            apt-get install -f -y
-            ;;
-        dnf)
-            dnf distro-sync -y
-            ;;
-        yum)
-            yum distro-sync -y
-            ;;
-        pacman)
-            pacman -Syyu --noconfirm
-            ;;
-        zypper)
-            zypper verify --recommends
-            ;;
-        apk)
-            apk fix
-            ;;
-        xbps)
-            xbps-pkgdb -a
-            ;;
-        *)
-            log_error "Unsupported package manager"
-            return 1
-            ;;
-    esac
-
-    log_success "Package repair complete"
-}
-
-# Clean package cache
-pkg_clean() {
-    log_info "Cleaning package cache..."
-
-    case "$PKG_MANAGER" in
-        apt)
-            apt-get autoremove -y -qq
-            apt-get clean -qq
-            ;;
-        dnf)
-            dnf autoremove -y -q
-            dnf clean all -q
-            ;;
-        yum)
-            yum autoremove -y -q
-            yum clean all -q
-            ;;
-        pacman)
-            pacman -Sc --noconfirm
-            ;;
-        zypper)
-            zypper clean -a
-            ;;
-        apk)
-            apk cache clean 2>/dev/null || rm -rf /var/cache/apk/*
-            ;;
-        xbps)
-            xbps-remove -O -y
-            ;;
-        *)
-            log_error "Unsupported package manager"
-            return 1
-            ;;
-    esac
-
-    log_success "Cache cleaned"
-}
-
-# ============================================================================
-# Universal Package Managers (Snap, Flatpak)
-# ============================================================================
-
-# Check if Snap is available
-snap_available() {
-    command -v snap &>/dev/null && systemctl is-active snapd &>/dev/null
-}
-
-# Install Snap package
-# Usage: snap_install PACKAGE [--classic]
-snap_install() {
-    local pkg="$1"
-    local classic="${2:-}"
-
-    if ! snap_available; then
-        log_error "Snap is not available on this system"
-        return 1
-    fi
-
-    log_info "Installing snap: $pkg"
-    if [[ "$classic" == "--classic" ]]; then
-        snap install "$pkg" --classic
-    else
-        snap install "$pkg"
-    fi
-}
-
-# Remove Snap package
-snap_remove() {
-    local pkg="$1"
-
-    if ! snap_available; then
-        log_error "Snap is not available"
-        return 1
-    fi
-
-    log_info "Removing snap: $pkg"
-    snap remove "$pkg"
-}
-
-# Check if Snap package is installed
-snap_is_installed() {
-    local pkg="$1"
-    snap_available && snap list "$pkg" &>/dev/null
-}
-
-# List installed Snaps
-snap_list() {
-    if ! snap_available; then
-        log_warn "Snap is not available"
-        return 1
-    fi
-    snap list
-}
-
-# Check if Flatpak is available
-flatpak_available() {
-    command -v flatpak &>/dev/null
 }
 
 # Install Flatpak package
-# Usage: flatpak_install APP_ID [--user]
 flatpak_install() {
-    local app_id="$1"
-    local user_flag="${2:-}"
+    local app="$1"
 
-    if ! flatpak_available; then
-        log_error "Flatpak is not available on this system"
+    if ! command_exists flatpak; then
+        log_warn "Flatpak not installed"
         return 1
     fi
 
-    log_info "Installing flatpak: $app_id"
-    if [[ "$user_flag" == "--user" ]]; then
-        flatpak install -y --user flathub "$app_id"
-    else
-        flatpak install -y flathub "$app_id"
+    log_info "Installing Flatpak: $app"
+
+    if [[ $DRY_RUN -eq 1 ]]; then
+        log_info "[DRY-RUN] Would install flatpak: $app"
+        return 0
     fi
+
+    flatpak install -y flathub "$app"
 }
 
-# Remove Flatpak package
-flatpak_remove() {
-    local app_id="$1"
+# Install Snap package
+snap_install() {
+    local app="$1"
 
-    if ! flatpak_available; then
-        log_error "Flatpak is not available"
+    if ! command_exists snap; then
+        log_warn "Snap not installed"
         return 1
     fi
 
-    log_info "Removing flatpak: $app_id"
-    flatpak uninstall -y "$app_id"
-}
+    log_info "Installing Snap: $app"
 
-# Check if Flatpak is installed
-flatpak_is_installed() {
-    local app_id="$1"
-    flatpak_available && flatpak list --app 2>/dev/null | grep -q "$app_id"
-}
-
-# List installed Flatpaks
-flatpak_list() {
-    if ! flatpak_available; then
-        log_warn "Flatpak is not available"
-        return 1
-    fi
-    flatpak list --app
-}
-
-# Setup Flathub repository
-flatpak_setup_flathub() {
-    if ! flatpak_available; then
-        log_error "Flatpak is not available"
-        return 1
+    if [[ $DRY_RUN -eq 1 ]]; then
+        log_info "[DRY-RUN] Would install snap: $app"
+        return 0
     fi
 
-    if ! flatpak remotes | grep -q flathub; then
+    sudo snap install "$app"
+}
+
+# Install and configure Flatpak with Flathub
+pkg_install_flatpak() {
+    log_info "Installing and configuring Flatpak..."
+
+    if [[ $DRY_RUN -eq 1 ]]; then
+        log_info "[DRY-RUN] Would install flatpak and configure Flathub"
+        return 0
+    fi
+
+    # Install flatpak package
+    if ! command_exists flatpak; then
+        case "$OS_PACKAGE_MANAGER" in
+            apt)
+                sudo apt install -y flatpak
+                # Install GNOME Software plugin if GNOME detected
+                if [[ "${XDG_CURRENT_DESKTOP:-}" == *"GNOME"* ]]; then
+                    sudo apt install -y gnome-software-plugin-flatpak 2>/dev/null || true
+                fi
+                ;;
+            dnf)
+                sudo dnf install -y flatpak
+                ;;
+            pacman)
+                sudo pacman -S --noconfirm --needed flatpak
+                ;;
+            zypper)
+                sudo zypper install -y flatpak
+                ;;
+            *)
+                log_error "Cannot install flatpak: unsupported package manager"
+                return 1
+                ;;
+        esac
+    fi
+
+    # Add Flathub remote if not present
+    if ! flatpak remote-list 2>/dev/null | grep -q "flathub"; then
         log_info "Adding Flathub repository..."
-        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-        log_success "Flathub added"
-    else
-        log_info "Flathub already configured"
+        flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     fi
-}
 
-# ============================================================================
-# Alpine Linux (apk) Support
-# ============================================================================
-
-# Check if apk is available (Alpine Linux)
-apk_available() {
-    command -v apk &>/dev/null
-}
-
-# Add apk to package manager detection in os_detect.sh
-# This function handles apk operations when PKG_MANAGER=apk
-pkg_install_apk() {
-    local packages=("$@")
-    apk add --no-cache "${packages[@]}"
-}
-
-pkg_remove_apk() {
-    local packages=("$@")
-    apk del "${packages[@]}"
-}
-
-pkg_update_apk() {
-    apk update
-}
-
-pkg_is_installed_apk() {
-    local pkg="$1"
-    apk info -e "$pkg" &>/dev/null
+    log_success "Flatpak configured with Flathub"
 }
